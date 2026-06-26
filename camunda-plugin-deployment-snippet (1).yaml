@@ -1,0 +1,131 @@
+# Add/merge these sections into spec.template.spec of your existing Camunda Deployment.
+# Replace <CAMUNDA_IMAGE_USED_BY_YOUR_DEPLOYMENT> with the same image your Camunda container already uses.
+initContainers:
+  - name: assemble-camunda-plugin-files
+    image: <CAMUNDA_IMAGE_USED_BY_YOUR_DEPLOYMENT>
+    command: ["/bin/sh", "-c"]
+    args:
+      - |
+        set -eu
+        mkdir -p /plugin-out/cockpit/scripts /plugin-out/tasklist/scripts
+        base64 -d /plugin-src/config.js.gz.b64 | gzip -d > /plugin-out/cockpit/config.js
+        base64 -d /plugin-src/definition-historic-activities.js.gz.b64 | gzip -d > /plugin-out/cockpit/scripts/definition-historic-activities.js
+        base64 -d /plugin-src/instance-auto-refresh.js.gz.b64 | gzip -d > /plugin-out/cockpit/scripts/instance-auto-refresh.js
+        base64 -d /plugin-src/instance-historic-activities.js.gz.b64 | gzip -d > /plugin-out/cockpit/scripts/instance-historic-activities.js
+        base64 -d /plugin-src/instance-route-history.js.gz.b64 | gzip -d > /plugin-out/cockpit/scripts/instance-route-history.js
+        base64 -d /plugin-src/instance-tab-modify.js.gz.b64 | gzip -d > /plugin-out/cockpit/scripts/instance-tab-modify.js
+        base64 -d /plugin-src/robot-module.js.gz.b64 | gzip -d > /plugin-out/cockpit/scripts/robot-module.js
+        base64 -d /plugin-src/tasklist-audit-log.js.gz.b64 | gzip -d > /plugin-out/tasklist/scripts/tasklist-audit-log.js
+        base64 -d /plugin-src/tasklist-config.js.gz.b64 | gzip -d > /plugin-out/tasklist/config.js
+        echo "Camunda plugin files assembled:"
+        find /plugin-out -type f -maxdepth 3 -print -exec wc -c {} \;
+    volumeMounts:
+      - name: camunda-plugin-files
+        mountPath: /plugin-out
+      - name: camunda-plugin-config
+        mountPath: /plugin-src/config.js.gz.b64
+        subPath: config.js.gz.b64
+        readOnly: true
+      - name: camunda-plugin-definition-historic-activities
+        mountPath: /plugin-src/definition-historic-activities.js.gz.b64
+        subPath: definition-historic-activities.js.gz.b64
+        readOnly: true
+      - name: camunda-plugin-instance-auto-refresh
+        mountPath: /plugin-src/instance-auto-refresh.js.gz.b64
+        subPath: instance-auto-refresh.js.gz.b64
+        readOnly: true
+      - name: camunda-plugin-instance-historic-activities
+        mountPath: /plugin-src/instance-historic-activities.js.gz.b64
+        subPath: instance-historic-activities.js.gz.b64
+        readOnly: true
+      - name: camunda-plugin-instance-route-history
+        mountPath: /plugin-src/instance-route-history.js.gz.b64
+        subPath: instance-route-history.js.gz.b64
+        readOnly: true
+      - name: camunda-plugin-instance-tab-modify
+        mountPath: /plugin-src/instance-tab-modify.js.gz.b64
+        subPath: instance-tab-modify.js.gz.b64
+        readOnly: true
+      - name: camunda-plugin-robot-module
+        mountPath: /plugin-src/robot-module.js.gz.b64
+        subPath: robot-module.js.gz.b64
+        readOnly: true
+      - name: camunda-plugin-tasklist-audit-log
+        mountPath: /plugin-src/tasklist-audit-log.js.gz.b64
+        subPath: tasklist-audit-log.js.gz.b64
+        readOnly: true
+      - name: camunda-plugin-tasklist-config
+        mountPath: /plugin-src/tasklist-config.js.gz.b64
+        subPath: tasklist-config.js.gz.b64
+        readOnly: true
+
+# Add these mounts under your main Camunda container volumeMounts:
+volumeMounts:
+  - name: camunda-plugin-files
+    mountPath: /camunda/webapps/camunda/app/cockpit/config.js
+    subPath: cockpit/config.js
+    readOnly: true
+  - name: camunda-plugin-files
+    mountPath: /camunda/webapps/camunda/app/cockpit/scripts/definition-historic-activities.js
+    subPath: cockpit/scripts/definition-historic-activities.js
+    readOnly: true
+  - name: camunda-plugin-files
+    mountPath: /camunda/webapps/camunda/app/cockpit/scripts/instance-auto-refresh.js
+    subPath: cockpit/scripts/instance-auto-refresh.js
+    readOnly: true
+  - name: camunda-plugin-files
+    mountPath: /camunda/webapps/camunda/app/cockpit/scripts/instance-historic-activities.js
+    subPath: cockpit/scripts/instance-historic-activities.js
+    readOnly: true
+  - name: camunda-plugin-files
+    mountPath: /camunda/webapps/camunda/app/cockpit/scripts/instance-route-history.js
+    subPath: cockpit/scripts/instance-route-history.js
+    readOnly: true
+  - name: camunda-plugin-files
+    mountPath: /camunda/webapps/camunda/app/cockpit/scripts/instance-tab-modify.js
+    subPath: cockpit/scripts/instance-tab-modify.js
+    readOnly: true
+  - name: camunda-plugin-files
+    mountPath: /camunda/webapps/camunda/app/cockpit/scripts/robot-module.js
+    subPath: cockpit/scripts/robot-module.js
+    readOnly: true
+  - name: camunda-plugin-files
+    mountPath: /camunda/webapps/camunda/app/tasklist/config.js
+    subPath: tasklist/config.js
+    readOnly: true
+  - name: camunda-plugin-files
+    mountPath: /camunda/webapps/camunda/app/tasklist/scripts/tasklist-audit-log.js
+    subPath: tasklist/scripts/tasklist-audit-log.js
+    readOnly: true
+
+# Add these under spec.template.spec.volumes:
+volumes:
+  - name: camunda-plugin-files
+    emptyDir: {}
+  - name: camunda-plugin-config
+    configMap:
+      name: camunda-plugin-config
+  - name: camunda-plugin-definition-historic-activities
+    configMap:
+      name: camunda-plugin-definition-historic-activities
+  - name: camunda-plugin-instance-auto-refresh
+    configMap:
+      name: camunda-plugin-instance-auto-refresh
+  - name: camunda-plugin-instance-historic-activities
+    configMap:
+      name: camunda-plugin-instance-historic-activities
+  - name: camunda-plugin-instance-route-history
+    configMap:
+      name: camunda-plugin-instance-route-history
+  - name: camunda-plugin-instance-tab-modify
+    configMap:
+      name: camunda-plugin-instance-tab-modify
+  - name: camunda-plugin-robot-module
+    configMap:
+      name: camunda-plugin-robot-module
+  - name: camunda-plugin-tasklist-audit-log
+    configMap:
+      name: camunda-plugin-tasklist-audit-log
+  - name: camunda-plugin-tasklist-config
+    configMap:
+      name: camunda-plugin-tasklist-config
