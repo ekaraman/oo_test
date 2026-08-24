@@ -1,1 +1,55 @@
-test
+
+<zeebe:ioMapping>
+
+  <!-- Mevcut connector input'ları -->
+  <zeebe:input ... />
+  <zeebe:input ... />
+  <zeebe:input ... />
+
+  <!-- Bizim output mapping'ler -->
+
+  <zeebe:output
+    source="=ooALLFlows[
+      item.leaf = true
+      and item.runnable = true
+      and item.name = ooFlowName
+      and (
+        ooFlowPath = null
+        or ooFlowPath = &quot;&quot;
+        or item.path = ooFlowPath
+      )
+    ]"
+    target="ooFlowMatches" />
+
+  <zeebe:output
+    source="=if count(
+      ooALLFlows[
+        item.leaf = true
+        and item.runnable = true
+        and item.name = ooFlowName
+        and (
+          ooFlowPath = null
+          or ooFlowPath = &quot;&quot;
+          or item.path = ooFlowPath
+        )
+      ]
+    ) = 1
+    then
+      ooALLFlows[
+        item.leaf = true
+        and item.runnable = true
+        and item.name = ooFlowName
+        and (
+          ooFlowPath = null
+          or ooFlowPath = &quot;&quot;
+          or item.path = ooFlowPath
+        )
+      ][1].id
+    else null"
+    target="ooFlowUuid" />
+
+  <zeebe:output
+    source="=ooLookupStatusCode"
+    target="ooLookupStatusCode" />
+
+</zeebe:ioMapping>
