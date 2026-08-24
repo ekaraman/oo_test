@@ -1,12 +1,26 @@
-read -r -p "OO username: " OO_USER
-read -r -s -p "OO password: " OO_PASS
-echo
+={
+  ooStatusCheckStatusCode: response.status,
+  ooExecutionSummary: response.body[1],
+  ooExecutionStatus: response.body[1].status,
+  ooResultStatusType: response.body[1].resultStatusType,
+  ooResultStatusName: response.body[1].resultStatusName
+}
 
-AUTH=$(printf '%s:%s' "$OO_USER" "$OO_PASS" | base64 | tr -d '\n')
 
-wget -S -O- \
-  --header="Authorization: Basic $AUTH" \
-  --header="Content-Type: application/json" \
-  --header="Accept: application/json" \
-  --post-data='{"flowUuid":"8f2fd4c7-cc44-4c8f-a571-1d6b39aa05c7"}' \
- 
+= ooExecutionStatus = "COMPLETED"
+  and ooResultStatusType = "RESOLVED"
+
+
+= ooExecutionStatus = "SYSTEM_FAILURE"
+  or ooExecutionStatus = "CANCELED"
+  or (
+    ooExecutionStatus = "COMPLETED"
+    and ooResultStatusType = "ERROR"
+  )
+
+
+= ooExecutionStatus = "RUNNING"
+  or ooExecutionStatus = "PAUSED"
+  or ooExecutionStatus = "PENDING_PAUSE"
+  or ooExecutionStatus = "PENDING_CANCEL"
+
