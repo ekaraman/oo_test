@@ -1,55 +1,12 @@
+read -r -p "OO username: " OO_USER
+read -r -s -p "OO password: " OO_PASS
+echo
 
-<zeebe:ioMapping>
+AUTH=$(printf '%s:%s' "$OO_USER" "$OO_PASS" | base64 | tr -d '\n')
 
-  <!-- Mevcut connector input'ları -->
-  <zeebe:input ... />
-  <zeebe:input ... />
-  <zeebe:input ... />
-
-  <!-- Bizim output mapping'ler -->
-
-  <zeebe:output
-    source="=ooALLFlows[
-      item.leaf = true
-      and item.runnable = true
-      and item.name = ooFlowName
-      and (
-        ooFlowPath = null
-        or ooFlowPath = &quot;&quot;
-        or item.path = ooFlowPath
-      )
-    ]"
-    target="ooFlowMatches" />
-
-  <zeebe:output
-    source="=if count(
-      ooALLFlows[
-        item.leaf = true
-        and item.runnable = true
-        and item.name = ooFlowName
-        and (
-          ooFlowPath = null
-          or ooFlowPath = &quot;&quot;
-          or item.path = ooFlowPath
-        )
-      ]
-    ) = 1
-    then
-      ooALLFlows[
-        item.leaf = true
-        and item.runnable = true
-        and item.name = ooFlowName
-        and (
-          ooFlowPath = null
-          or ooFlowPath = &quot;&quot;
-          or item.path = ooFlowPath
-        )
-      ][1].id
-    else null"
-    target="ooFlowUuid" />
-
-  <zeebe:output
-    source="=ooLookupStatusCode"
-    target="ooLookupStatusCode" />
-
-</zeebe:ioMapping>
+wget -S -O- \
+  --header="Authorization: Basic $AUTH" \
+  --header="Content-Type: application/json" \
+  --header="Accept: application/json" \
+  --post-data='{"flowUuid":"8f2fd4c7-cc44-4c8f-a571-1d6b39aa05c7"}' \
+ 
