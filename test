@@ -51,7 +51,7 @@
       <bpmn:incoming>Flow_Retry_Merge</bpmn:incoming>
       <bpmn:outgoing>Flow_Merge_Launch</bpmn:outgoing>
     </bpmn:exclusiveGateway>
-    <bpmn:serviceTask id="ServiceTask_OO_Launch" name="OO Workflow Ba艧lat" zeebe:modelerTemplate="io.camunda.connectors.HttpJson.v2" zeebe:modelerTemplateVersion="15">
+    <bpmn:serviceTask id="ServiceTask_OO_Launch" name="OO Workflow Ba&#351;lat" zeebe:modelerTemplate="io.camunda.connectors.HttpJson.v2" zeebe:modelerTemplateVersion="15">
       <bpmn:extensionElements>
         <zeebe:taskDefinition type="io.camunda:http-json:1" retries="3"/>
         <zeebe:ioMapping>
@@ -119,7 +119,7 @@
       <bpmn:outgoing>Flow_Status_Running</bpmn:outgoing>
       <bpmn:outgoing>Flow_Status_Finished</bpmn:outgoing>
     </bpmn:exclusiveGateway>
-    <bpmn:serviceTask id="ServiceTask_OO_Output" name="OO Outputlar谋n谋 Al" zeebe:modelerTemplate="io.camunda.connectors.HttpJson.v2" zeebe:modelerTemplateVersion="15">
+    <bpmn:serviceTask id="ServiceTask_OO_Output" name="OO Outputlar&#305;n&#305; Al" zeebe:modelerTemplate="io.camunda.connectors.HttpJson.v2" zeebe:modelerTemplateVersion="15">
       <bpmn:extensionElements>
         <zeebe:taskDefinition type="io.camunda:http-json:1" retries="3"/>
         <zeebe:ioMapping>
@@ -149,7 +149,7 @@
       <bpmn:outgoing>Flow_Final_Success</bpmn:outgoing>
       <bpmn:outgoing>Flow_Final_Failed</bpmn:outgoing>
     </bpmn:exclusiveGateway>
-    <bpmn:endEvent id="End_OO_Success" name="Ba艧ar谋l谋">
+    <bpmn:endEvent id="End_OO_Success" name="Ba&#351;ar&#305;l&#305;">
       <bpmn:incoming>Flow_Final_Success</bpmn:incoming>
     </bpmn:endEvent>
     <bpmn:userTask id="UserTask_OO_Error" name="Hata Durumunda Karar Ver">
@@ -161,7 +161,7 @@
       <bpmn:incoming>Flow_Final_Failed</bpmn:incoming>
       <bpmn:outgoing>Flow_Error_Decision</bpmn:outgoing>
     </bpmn:userTask>
-    <bpmn:exclusiveGateway id="Gateway_OO_ErrorAction" name="Ne yap谋ls谋n?" default="Flow_Continue">
+    <bpmn:exclusiveGateway id="Gateway_OO_ErrorAction" name="Ne yap&#305;ls&#305;n?" default="Flow_Continue">
       <bpmn:incoming>Flow_Error_Decision</bpmn:incoming>
       <bpmn:outgoing>Flow_Retry_Merge</bpmn:outgoing>
       <bpmn:outgoing>Flow_Continue</bpmn:outgoing>
@@ -169,7 +169,7 @@
     <bpmn:endEvent id="End_OO_Continue" name="Manuel Devam Edildi">
       <bpmn:incoming>Flow_Continue</bpmn:incoming>
     </bpmn:endEvent>
-    <bpmn:endEvent id="End_OO_NotFound" name="Workflow Bulunamad谋 / Belirsiz">
+    <bpmn:endEvent id="End_OO_NotFound" name="Workflow Bulunamad&#305; / Belirsiz">
       <bpmn:incoming>Flow_OO_NotFound</bpmn:incoming>
     </bpmn:endEvent>
     <bpmn:sequenceFlow id="Flow_Start_Input" sourceRef="StartEvent_OO" targetRef="UserTask_OO_Input"/>
@@ -178,26 +178,26 @@
     <bpmn:sequenceFlow id="Flow_OO_Found" name="Evet" sourceRef="Gateway_OO_Found" targetRef="Gateway_Launch_Merge">
       <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=ooFlowUuid != null</bpmn:conditionExpression>
     </bpmn:sequenceFlow>
-    <bpmn:sequenceFlow id="Flow_OO_NotFound" name="Hay谋r / Birden Fazla" sourceRef="Gateway_OO_Found" targetRef="End_OO_NotFound"/>
+    <bpmn:sequenceFlow id="Flow_OO_NotFound" name="Hay&#305;r / Birden Fazla" sourceRef="Gateway_OO_Found" targetRef="End_OO_NotFound"/>
     <bpmn:sequenceFlow id="Flow_Merge_Launch" sourceRef="Gateway_Launch_Merge" targetRef="ServiceTask_OO_Launch"/>
     <bpmn:sequenceFlow id="Flow_Launch_StatusMerge" sourceRef="ServiceTask_OO_Launch" targetRef="Gateway_Status_Merge"/>
     <bpmn:sequenceFlow id="Flow_StatusMerge_Timer" sourceRef="Gateway_Status_Merge" targetRef="Timer_OO_Wait"/>
     <bpmn:sequenceFlow id="Flow_Timer_Status" sourceRef="Timer_OO_Wait" targetRef="ServiceTask_OO_Status"/>
     <bpmn:sequenceFlow id="Flow_Status_Gateway" sourceRef="ServiceTask_OO_Status" targetRef="Gateway_OO_Status"/>
-    <bpmn:sequenceFlow id="Flow_Status_Running" name="脟al谋艧谋yor / Bekliyor" sourceRef="Gateway_OO_Status" targetRef="Gateway_Status_Merge">
+    <bpmn:sequenceFlow id="Flow_Status_Running" name="&#199;al&#305;&#351;&#305;yor / Bekliyor" sourceRef="Gateway_OO_Status" targetRef="Gateway_Status_Merge">
       <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=ooExecutionStatus = "RUNNING" or ooExecutionStatus = "PAUSED" or ooExecutionStatus = "PENDING_PAUSE" or ooExecutionStatus = "PENDING_CANCEL"</bpmn:conditionExpression>
     </bpmn:sequenceFlow>
     <bpmn:sequenceFlow id="Flow_Error_Decision" sourceRef="UserTask_OO_Error" targetRef="Gateway_OO_ErrorAction"/>
-    <bpmn:sequenceFlow id="Flow_Retry_Merge" name="Tekrar Ba艧lat" sourceRef="Gateway_OO_ErrorAction" targetRef="Gateway_Launch_Merge">
+    <bpmn:sequenceFlow id="Flow_Retry_Merge" name="Tekrar Ba&#351;lat" sourceRef="Gateway_OO_ErrorAction" targetRef="Gateway_Launch_Merge">
       <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=ooErrorAction = "retry"</bpmn:conditionExpression>
     </bpmn:sequenceFlow>
     <bpmn:sequenceFlow id="Flow_Continue" name="Devam Et" sourceRef="Gateway_OO_ErrorAction" targetRef="End_OO_Continue"/>
     <bpmn:sequenceFlow id="Flow_Status_Finished" sourceRef="Gateway_OO_Status" targetRef="ServiceTask_OO_Output" name="Bitti"/>
     <bpmn:sequenceFlow id="Flow_Output_FinalResult" sourceRef="ServiceTask_OO_Output" targetRef="Gateway_OO_FinalResult"/>
-    <bpmn:sequenceFlow id="Flow_Final_Success" sourceRef="Gateway_OO_FinalResult" targetRef="End_OO_Success" name="Ba艧ar谋l谋">
+    <bpmn:sequenceFlow id="Flow_Final_Success" sourceRef="Gateway_OO_FinalResult" targetRef="End_OO_Success" name="Ba&#351;ar&#305;l&#305;">
       <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=ooExecutionStatus = "COMPLETED" and ooResultStatusType = "RESOLVED"</bpmn:conditionExpression>
     </bpmn:sequenceFlow>
-    <bpmn:sequenceFlow id="Flow_Final_Failed" sourceRef="Gateway_OO_FinalResult" targetRef="UserTask_OO_Error" name="Ba艧ar谋s谋z"/>
+    <bpmn:sequenceFlow id="Flow_Final_Failed" sourceRef="Gateway_OO_FinalResult" targetRef="UserTask_OO_Error" name="Ba&#351;ar&#305;s&#305;z"/>
   </bpmn:process>
   <bpmndi:BPMNDiagram id="BPMNDiagram_OO">
     <bpmndi:BPMNPlane id="BPMNPlane_OO" bpmnElement="OO_Workflow_Process">
