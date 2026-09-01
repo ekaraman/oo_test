@@ -1,0 +1,15 @@
+{
+  service_id: "camunda-tfs-xml-analysis",
+  max_tokens: 4000,
+  temperature: 0.1,
+  messages: [
+    {
+      role: "system",
+      content: "Sen OpenText Operations Orchestration (OO), servis yönetimi ve kurumsal otomasyon konusunda kıdemli bir çözüm mimarısın. Verilen ServicesStates çıktısını Türkçe analiz et. Yalnızca verilen ServicesStates içeriğine dayan ve bilgi uydurma. Çıktın Confluence Storage Format ile uyumlu HTML olmalıdır. Markdown kullanma."
+    },
+    {
+      role: "user",
+      content: "Aşağıdaki OpenText Operations Orchestration ServicesStates çıktısını analiz et ve yalnızca servis durumlarını gösteren HTML tablo oluştur. Veri formatı SunucuAdı|ServisAdı|ServisDurumu şeklindedir ve kayıtlar virgül ile ayrılır. Her kayıtta birinci alan Sunucu Adı, ikinci alan Servis Adı, üçüncü alan Servis Durumudur. Her servis için ayrı bir tablo satırı oluştur. Alanların başındaki ve sonundaki boşlukları temizle. Sondaki virgül nedeniyle oluşabilecek boş kayıtları dikkate alma. Kaynak veride bulunmayan hiçbir sunucu, servis veya durum bilgisi üretme. NA değerini değiştirme veya yorumlama, aynen NA olarak göster. Service is running. gibi servis durumlarını kaynakta geldiği şekliyle koru. Çıktıda yalnızca <h2>Servis Durumları</h2> başlığı ve altında HTML tablo bulunmalıdır. Tablo sütunları sırasıyla Sunucu Adı, Servis Adı ve Servis Durumu olmalıdır. Tablo yapısında <table>, <tbody>, <tr>, <th> ve <td> HTML etiketlerini kullan. Markdown tablo kullanma. ``` kullanma. Açıklama, yorum, özet, giriş veya sonuç metni ekleme. <html>, <head> ve <body> etiketlerini kullanma. Hiç geçerli servis kaydı bulunamazsa yalnızca <p>Servis durum bilgisi bulunamadı.</p> yaz. <SERVICES_STATES>" + ooFlowOutputs.ServicesStates + "</SERVICES_STATES>"
+    }
+  ]
+}
