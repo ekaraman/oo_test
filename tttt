@@ -1,27 +1,14 @@
-={
-  service_id: "camunda-tfs-xml-analysis",
-  max_tokens: 4000,
-  temperature: 0.1,
-  messages: [
-    {
-      role: "system",
-      content: "Sen OpenText Operations Orchestration ve kurumsal otomasyon konusunda kıdemli bir çözüm mimarısın. Sana verilen servis durumlarını analiz et ve yalnızca Confluence Storage Format ile uyumlu HTML üret. Veride olmayan hiçbir bilgi üretme."
-    },
-    {
-      role: "user",
-      content: string join([
-        "Aşağıdaki servis durumlarını HTML tablo haline getir. ",
-        "Her kayıt virgül ile, kayıt içindeki alanlar | karakteri ile ayrılmıştır. ",
-        "Birinci alan Sunucu Adı, ikinci alan Servis Adı, üçüncü alan Servis Durumudur. ",
-        "Her servis ayrı satır olmalıdır. ",
-        "Tablo sütunları sırasıyla Sunucu Adı, Servis Adı ve Servis Durumu olmalıdır. ",
-        "NA değerlerini değiştirme. Servis durumlarını kaynakta geldiği şekliyle yaz. ",
-        "Yalnızca <h2>Servis Durumları</h2> başlığı ve HTML tablo üret. ",
-        "Markdown, açıklama, yorum, özet, html, head veya body etiketi kullanma. ",
-        "Kullanılacak etiketler: h2, table, tbody, tr, th ve td. ",
-        "ServicesStates: ",
-        ooFlowOutputs.ServicesStates
-      ], "")
-    }
-  ]
+$body = @{
+    grant_type = "password"
+    client_id  = "<CLIENT_ID>"
+    username   = "<LDAP_USERNAME>"
+    password   = "<LDAP_PASSWORD>"
 }
+
+$response = Invoke-RestMethod `
+    -Method POST `
+    -Uri "https://<KEYCLOAK_HOST>/auth/realms/<REALM>/protocol/openid-connect/token" `
+    -ContentType "application/x-www-form-urlencoded" `
+    -Body $body
+
+$token = $response.access_token
