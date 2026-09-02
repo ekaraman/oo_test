@@ -1,13 +1,19 @@
-$payload = $token.Split('.')[1]
-$payload = $payload.Replace('-', '+').Replace('_', '/')
+$processBody = @{
+    processDefinitionId      = "RestartServiceProcess"
+    processDefinitionVersion = -1
+    variables = @{
+        jiraIssueKey = "TEST-123"
+    }
+} | ConvertTo-Json -Depth 10
 
-switch ($payload.Length % 4) {
-    2 { $payload += '==' }
-    3 { $payload += '=' }
-}
 
-$json = [System.Text.Encoding]::UTF8.GetString(
-    [Convert]::FromBase64String($payload)
-)
 
-$json
+
+Invoke-RestMethod `
+    -Method POST `
+    -Uri "https://camunda-operate.seip-vip-prd-ocpgen10.qnb.com.tr/v2/process-instances" `
+    -Headers @{
+        Authorization = "Bearer $token"
+    } `
+    -ContentType "application/json" `
+    -Body $processBody
