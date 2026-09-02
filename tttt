@@ -1,14 +1,13 @@
-$body = @{
-    grant_type = "password"
-    client_id  = "<CLIENT_ID>"
-    username   = "<LDAP_USERNAME>"
-    password   = "<LDAP_PASSWORD>"
+$payload = $token.Split('.')[1]
+$payload = $payload.Replace('-', '+').Replace('_', '/')
+
+switch ($payload.Length % 4) {
+    2 { $payload += '==' }
+    3 { $payload += '=' }
 }
 
-$response = Invoke-RestMethod `
-    -Method POST `
-    -Uri "https://<KEYCLOAK_HOST>/auth/realms/<REALM>/protocol/openid-connect/token" `
-    -ContentType "application/x-www-form-urlencoded" `
-    -Body $body
+$json = [System.Text.Encoding]::UTF8.GetString(
+    [Convert]::FromBase64String($payload)
+)
 
-$token = $response.access_token
+$json
