@@ -1,15 +1,58 @@
 ={
   service_id: "camunda-tfs-xml-analysis",
-  max_tokens: 1000,
+  max_tokens: 4000,
   temperature: 0.1,
   messages: [
     {
       role: "system",
-      content: "Sen kurumsal otomasyon konusunda uzman bir asistansın."
+      content: "Sen OpenText Operations Orchestration (OO), Windows servis yönetimi ve kurumsal otomasyon konusunda deneyimli bir çözüm mimarısın. Görevin sana verilen ServicesStates verisini analiz ederek Confluence Storage Format ile uyumlu, sade ve okunabilir HTML çıktısı üretmektir. Yalnızca verilen veriyi kullan. Veride bulunmayan hiçbir sunucu, servis veya servis durumu üretme. Çıktında Markdown kullanma."
     },
     {
       role: "user",
-      content: "ATMTSTENT01|swc_atm|NA,ATMTSTENT01|CommHandler|NA,ATMTSTENT01|BSPROV_FIN|Service is running. verisini Sunucu Adı, Servis Adı ve Servis Durumu sütunlarından oluşan HTML tabloya dönüştür."
+      content: string join([
+        "Aşağıda OpenText Operations Orchestration tarafından döndürülen ServicesStates verisi bulunmaktadır. ",
+        "Bu veriyi analiz ederek Confluence sayfasında doğrudan kullanılabilecek HTML tablo oluştur. ",
+        
+        "VERİ FORMATI: ",
+        "Her servis kaydı virgül karakteri ile ayrılır. ",
+        "Her kayıt içerisindeki alanlar | karakteri ile ayrılır. ",
+        "Birinci alan Sunucu Adı, ikinci alan Servis Adı, üçüncü alan Servis Durumudur. ",
+        
+        "TABLO KURALLARI: ",
+        "Tablonun başlığı Servis Durumları olmalıdır. ",
+        "Tabloda tam olarak üç sütun bulunmalıdır: Sunucu Adı, Servis Adı, Servis Durumu. ",
+        "Her servis için ayrı bir tablo satırı oluştur. ",
+        "Aynı sunucuya ait birden fazla servis varsa her servisi ayrı satırda göster. ",
+        "Alanların başındaki ve sonundaki gereksiz boşlukları temizle. ",
+        "Sondaki virgül nedeniyle oluşabilecek boş kayıtları dikkate alma. ",
+        "NA değerini değiştirme, yorumlama veya başka bir ifadeye dönüştürme; aynen NA olarak göster. ",
+        "Service is running., Service is stopped. veya benzeri durum değerlerini kaynak veride geldiği şekliyle koru. ",
+        "Kaynak veride bulunmayan hiçbir bilgi ekleme. ",
+        "Servis isimlerini veya sunucu isimlerini değiştirme. ",
+        "Veriyi tahmin etme veya eksik alanları kendin tamamlama. ",
+        
+        "HTML KURALLARI: ",
+        "Çıktı yalnızca Confluence Storage Format ile uyumlu HTML olmalıdır. ",
+        "Başlık için <h2>Servis Durumları</h2> kullan. ",
+        "Tablo için table, tbody, tr, th ve td etiketlerini kullan. ",
+        "Markdown tablo kullanma. ",
+        "``` karakterlerini kullanma. ",
+        "<html>, <head> veya <body> etiketlerini kullanma. ",
+        "HTML çıktısından önce veya sonra açıklama, yorum, özet ya da başka bir metin ekleme. ",
+        "Servis kaydı bulunamazsa yalnızca <p>Servis durum bilgisi bulunamadı.</p> çıktısını üret. ",
+        
+        "ÖRNEK ÇIKTI YAPISI: ",
+        "<h2>Servis Durumları</h2>",
+        "<table>",
+        "<tbody>",
+        "<tr><th>Sunucu Adı</th><th>Servis Adı</th><th>Servis Durumu</th></tr>",
+        "<tr><td>SERVER01</td><td>ServiceA</td><td>Service is running.</td></tr>",
+        "</tbody>",
+        "</table>",
+        
+        "ŞİMDİ ANALİZ EDİLECEK SERVICESSTATES VERİSİ: ",
+        string(ooFlowOutputs.ServicesStates)
+      ], "")
     }
   ]
 }
