@@ -1,7 +1,15 @@
-$response = Invoke-RestMethod `
-    -Method POST `
-    -Uri "https://camunda-keycloak.seip-vip-prd-ocpgen10.qnb.com.tr/auth/realms/camunda-platform/protocol/openid-connect/token" `
-    -ContentType "application/x-www-form-urlencoded" `
-    -Body $body
-
-$token = $response.access_token
+={
+  service_id: "camunda-tfs-xml-analysis",
+  max_tokens: 1000,
+  temperature: 0.1,
+  messages: [
+    {
+      role: "system",
+      content: "Sen kurumsal otomasyon konusunda uzman bir asistansın."
+    },
+    {
+      role: "user",
+      content: "ATMTSTENT01|swc_atm|NA,ATMTSTENT01|CommHandler|NA,ATMTSTENT01|BSPROV_FIN|Service is running. verisini Sunucu Adı, Servis Adı ve Servis Durumu sütunlarından oluşan HTML tabloya dönüştür."
+    }
+  ]
+}
