@@ -1,40 +1,19 @@
-$baseUrl = "https://CAMUNDA-API-ROUTE"
-$token   = "TOKEN"
-
-$headers = @{
-    Authorization = "Bearer $token"
-    "Content-Type" = "application/json"
-}
-
-$searchBody = @{
-    filter = @{
-        processDefinitionId = "OO_Service_States"
-    }
-    page = @{
-        limit = 100
-    }
-} | ConvertTo-Json -Depth 5
-
-$result = Invoke-RestMethod `
-    -Method POST `
-    -Uri "$baseUrl/v2/process-definitions/search" `
-    -Headers $headers `
-    -Body $searchBody
-
-$result.items | ForEach-Object {
-
-    $key = $_.processDefinitionKey
-    $version = $_.version
-
-    Write-Host "Siliniyor: Version $version - Key $key"
-
-    $deleteBody = @{
-        deleteHistory = $true
-    } | ConvertTo-Json
-
-    Invoke-RestMethod `
-        -Method POST `
-        -Uri "$baseUrl/v2/resources/$key/deletion" `
-        -Headers $headers `
-        -Body $deleteBody
+body: {
+  storage: {
+    value: string join([
+      "<h1>AI XML Analizi</h1>",
+      "<p><strong>Kaynak dosya: </strong>",
+      sourceFilePath,
+      "</p>",
+      "<p><strong>AI modeli: </strong>",
+      aiModel,
+      "</p>",
+      "<p><strong>Güncelleme zamanı: </strong>",
+      string(now()),
+      "</p>",
+      "<hr/>",
+      "<p>TEST - AI ANALYSIS YERİ</p>"
+    ], ""),
+    representation: "storage"
+  }
 }
