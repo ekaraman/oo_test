@@ -1,8 +1,12 @@
 =to JSON({
-  ServerName: string join(serverNames, ";"),
-  ServiceName: string join(
-    for server in serverNames
-    return string join(serviceNames, ","),
-    ";"
-  )
+  GeneralParameters: tfsGeneralParameters.fileContent,
+  KosParameters: tfsKOSParameters.fileContent,
+  ServerParameters: to JSON({
+    ServerName: string join(serverNames, ";"),
+    ServiceName: string join(
+      for s in serverNames
+      return string join(serviceNames, ","),
+      ";"
+    )
+  })
 })
