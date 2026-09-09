@@ -1,49 +1,30 @@
-=if list contains(serverName, "ALL")
+=if restartType != null
+   and list contains(restartType, "ALL|" + environment)
 then
-  ["ALL"]
+  [
+    {
+      label: "ALL",
+      value: "ALL|" + environment
+    }
+  ]
 else
   concatenate(
-    ["ALL"],
-    sort(
-      distinct values(
-        if list contains(restartType, "ALL")
-        then
-          KOSParameters[
-            item.ortam = environment
-          ].Servername
-        else
-          KOSParameters[
-            item.ortam = environment
-            and list contains(restartType, item.RestartType)
-          ].Servername
-      ),
-      function(x, y) x < y
-    )
-  )
-
-
-=if list contains(serviceName, "ALL")
-then
-  ["ALL"]
-else
-  concatenate(
-    ["ALL"],
-    sort(
+    [
+      {
+        label: "ALL",
+        value: "ALL|" + environment
+      }
+    ],
+    for r in sort(
       distinct values(
         KOSParameters[
           item.ortam = environment
-          and
-          (
-            list contains(restartType, "ALL")
-            or list contains(restartType, item.RestartType)
-          )
-          and
-          (
-            list contains(serverName, "ALL")
-            or list contains(serverName, item.Servername)
-          )
-        ].ServiceName
+        ].RestartType
       ),
       function(x, y) x < y
     )
+    return {
+      label: r,
+      value: r
+    }
   )
