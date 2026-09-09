@@ -1,20 +1,7 @@
-=if restartType = null
-then []
-else
-  for r in restartType
-  return split(r, "[|]")[-1]
-
-
-
-=if serverName = null
-then []
-else
-  for s in serverName
-  return split(s, "[|]")[-1]
-
-
-=if serviceName = null
-then []
-else
-  for s in serviceName
-  return split(s, "[|]")[-1]
+curl -X PUT "http://localhost:9200/_cluster/settings" \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "persistent": {
+      "cluster.max_shards_per_node": 1500
+    }
+  }'
