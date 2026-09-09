@@ -18,20 +18,21 @@
   )
 )
 
-
 =concatenate(
   ["ALL"],
   sort(
     distinct values(
       KOSParameters[
-        ortam = environment
-        and (
+        item.ortam = environment
+        and
+        (
           list contains(restartType, "ALL")
-          or list contains(restartType, RestartType)
+          or list contains(restartType, item.RestartType)
         )
-        and (
+        and
+        (
           list contains(serverName, "ALL")
-          or list contains(serverName, Servername)
+          or list contains(serverName, item.Servername)
         )
       ].ServiceName
     ),
