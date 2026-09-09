@@ -1,7 +1,8 @@
-curl -X PUT "http://localhost:9200/_cluster/settings" \
-  -H 'Content-Type: application/json' \
-  -d '{
-    "persistent": {
-      "cluster.max_shards_per_node": 1500
-    }
-  }'
+=to JSON({
+  ServerName: string join(serverNames, ";"),
+  ServiceName: string join(
+    for server in serverNames
+    return string join(serviceNames, ","),
+    ";"
+  )
+})
