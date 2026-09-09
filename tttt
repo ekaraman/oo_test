@@ -1,10 +1,10 @@
 =if restartType != null
-   and list contains(restartType, "ALL|" + environment)
+  and list contains(restartType, environment + "|ALL")
 then
   [
     {
       label: "ALL",
-      value: "ALL|" + environment
+      value: environment + "|ALL"
     }
   ]
 else
@@ -12,7 +12,7 @@ else
     [
       {
         label: "ALL",
-        value: "ALL|" + environment
+        value: environment + "|ALL"
       }
     ],
     for r in sort(
@@ -25,30 +25,43 @@ else
     )
     return {
       label: r,
-      value: r
+      value: environment + "|" + r
     }
   )
 
 
-=if serverName != null
-   and list contains(
-     serverName,
-     "ALL|" + environment + "|" +
-     string join(
-       sort(restartType, function(x, y) x < y),
-       ","
-     )
-   )
+
+
+
+
+
+=if restartType = null
+then
+  []
+else if count(restartType) = 0
+then
+  []
+else if serverName != null
+  and list contains(
+    serverName,
+    environment + "|" +
+    string join(
+      sort(restartType, function(x, y) x < y),
+      ","
+    ) +
+    "|ALL"
+  )
 then
   [
     {
       label: "ALL",
       value:
-        "ALL|" + environment + "|" +
+        environment + "|" +
         string join(
           sort(restartType, function(x, y) x < y),
           ","
-        )
+        ) +
+        "|ALL"
     }
   ]
 else
@@ -57,16 +70,17 @@ else
       {
         label: "ALL",
         value:
-          "ALL|" + environment + "|" +
+          environment + "|" +
           string join(
             sort(restartType, function(x, y) x < y),
             ","
-          )
+          ) +
+          "|ALL"
       }
     ],
     for s in sort(
       distinct values(
-        if list contains(restartType, "ALL|" + environment)
+        if list contains(restartType, environment + "|ALL")
         then
           KOSParameters[
             item.ortam = environment
@@ -74,47 +88,75 @@ else
         else
           KOSParameters[
             item.ortam = environment
-            and list contains(restartType, item.RestartType)
+            and list contains(
+              restartType,
+              environment + "|" + item.RestartType
+            )
           ].Servername
       ),
       function(x, y) x < y
     )
     return {
       label: s,
-      value: s
+      value:
+        environment + "|" +
+        string join(
+          sort(restartType, function(x, y) x < y),
+          ","
+        ) +
+        "|" + s
     }
   )
 
 
 
 
-=if serviceName != null
-   and list contains(
-     serviceName,
-     "ALL|" + environment + "|" +
-     string join(
-       sort(restartType, function(x, y) x < y),
-       ","
-     ) + "|" +
-     string join(
-       sort(serverName, function(x, y) x < y),
-       ","
-     )
-   )
+
+
+
+=if restartType = null
+then
+  []
+else if count(restartType) = 0
+then
+  []
+else if serverName = null
+then
+  []
+else if count(serverName) = 0
+then
+  []
+else if serviceName != null
+  and list contains(
+    serviceName,
+    environment + "|" +
+    string join(
+      sort(restartType, function(x, y) x < y),
+      ","
+    ) +
+    "|" +
+    string join(
+      sort(serverName, function(x, y) x < y),
+      ","
+    ) +
+    "|ALL"
+  )
 then
   [
     {
       label: "ALL",
       value:
-        "ALL|" + environment + "|" +
+        environment + "|" +
         string join(
           sort(restartType, function(x, y) x < y),
           ","
-        ) + "|" +
+        ) +
+        "|" +
         string join(
           sort(serverName, function(x, y) x < y),
           ","
-        )
+        ) +
+        "|ALL"
     }
   ]
 else
@@ -123,15 +165,17 @@ else
       {
         label: "ALL",
         value:
-          "ALL|" + environment + "|" +
+          environment + "|" +
           string join(
             sort(restartType, function(x, y) x < y),
             ","
-          ) + "|" +
+          ) +
+          "|" +
           string join(
             sort(serverName, function(x, y) x < y),
             ","
-          )
+          ) +
+          "|ALL"
       }
     ],
     for s in sort(
@@ -140,20 +184,34 @@ else
           item.ortam = environment
           and
           (
-            list contains(restartType, "ALL|" + environment)
-            or list contains(restartType, item.RestartType)
+            list contains(restartType, environment + "|ALL")
+            or
+            list contains(
+              restartType,
+              environment + "|" + item.RestartType
+            )
           )
           and
           (
             list contains(
               serverName,
-              "ALL|" + environment + "|" +
+              environment + "|" +
               string join(
                 sort(restartType, function(x, y) x < y),
                 ","
-              )
+              ) +
+              "|ALL"
             )
-            or list contains(serverName, item.Servername)
+            or
+            list contains(
+              serverName,
+              environment + "|" +
+              string join(
+                sort(restartType, function(x, y) x < y),
+                ","
+              ) +
+              "|" + item.Servername
+            )
           )
         ].ServiceName
       ),
@@ -161,6 +219,18 @@ else
     )
     return {
       label: s,
-      value: s
+      value:
+        environment + "|" +
+        string join(
+          sort(restartType, function(x, y) x < y),
+          ","
+        ) +
+        "|" +
+        string join(
+          sort(serverName, function(x, y) x < y),
+          ","
+        ) +
+        "|" + s
     }
   )
+
