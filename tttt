@@ -28,3 +28,139 @@ else
       value: r
     }
   )
+
+
+=if serverName != null
+   and list contains(
+     serverName,
+     "ALL|" + environment + "|" +
+     string join(
+       sort(restartType, function(x, y) x < y),
+       ","
+     )
+   )
+then
+  [
+    {
+      label: "ALL",
+      value:
+        "ALL|" + environment + "|" +
+        string join(
+          sort(restartType, function(x, y) x < y),
+          ","
+        )
+    }
+  ]
+else
+  concatenate(
+    [
+      {
+        label: "ALL",
+        value:
+          "ALL|" + environment + "|" +
+          string join(
+            sort(restartType, function(x, y) x < y),
+            ","
+          )
+      }
+    ],
+    for s in sort(
+      distinct values(
+        if list contains(restartType, "ALL|" + environment)
+        then
+          KOSParameters[
+            item.ortam = environment
+          ].Servername
+        else
+          KOSParameters[
+            item.ortam = environment
+            and list contains(restartType, item.RestartType)
+          ].Servername
+      ),
+      function(x, y) x < y
+    )
+    return {
+      label: s,
+      value: s
+    }
+  )
+
+
+
+
+=if serviceName != null
+   and list contains(
+     serviceName,
+     "ALL|" + environment + "|" +
+     string join(
+       sort(restartType, function(x, y) x < y),
+       ","
+     ) + "|" +
+     string join(
+       sort(serverName, function(x, y) x < y),
+       ","
+     )
+   )
+then
+  [
+    {
+      label: "ALL",
+      value:
+        "ALL|" + environment + "|" +
+        string join(
+          sort(restartType, function(x, y) x < y),
+          ","
+        ) + "|" +
+        string join(
+          sort(serverName, function(x, y) x < y),
+          ","
+        )
+    }
+  ]
+else
+  concatenate(
+    [
+      {
+        label: "ALL",
+        value:
+          "ALL|" + environment + "|" +
+          string join(
+            sort(restartType, function(x, y) x < y),
+            ","
+          ) + "|" +
+          string join(
+            sort(serverName, function(x, y) x < y),
+            ","
+          )
+      }
+    ],
+    for s in sort(
+      distinct values(
+        KOSParameters[
+          item.ortam = environment
+          and
+          (
+            list contains(restartType, "ALL|" + environment)
+            or list contains(restartType, item.RestartType)
+          )
+          and
+          (
+            list contains(
+              serverName,
+              "ALL|" + environment + "|" +
+              string join(
+                sort(restartType, function(x, y) x < y),
+                ","
+              )
+            )
+            or list contains(serverName, item.Servername)
+          )
+        ].ServiceName
+      ),
+      function(x, y) x < y
+    )
+    return {
+      label: s,
+      value: s
+    }
+  )
