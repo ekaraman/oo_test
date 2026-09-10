@@ -1,73 +1,68 @@
-= if serverName = null
-then
-  []
-else if
-  serviceName != null
-  and
-  list contains(
-    for r in restartType
-    return split(r, "[|]")[-1],
-    "ALL"
-  )
-  and
-  list contains(
-    for s in serverName
-    return split(s, "[|]")[-1],
-    "ALL"
-  )
-  and
-  list contains(
-    for s in serviceName
-    return split(s, "[|]")[-1],
-    "ALL"
-  )
-then
-  sort(
-    distinct values(
-      for k in KOSParameters[
-        item.ortam = environment
-      ]
-      return k.serverName
+= if
+    list contains(
+      for r in restartType
+      return split(r, "[|]")[-1],
+      "ALL"
     )
-  )
-else
-  for s in serverName
-  return split(s, "[|]")[-1]
-
-
-
-
-
-= if serviceName = null
-then
-  []
-else if
-  list contains(
-    for r in restartType
-    return split(r, "[|]")[-1],
-    "ALL"
-  )
-  and
-  list contains(
-    for s in serverName
-    return split(s, "[|]")[-1],
-    "ALL"
-  )
-  and
-  list contains(
-    for s in serviceName
-    return split(s, "[|]")[-1],
-    "ALL"
-  )
-then
-  sort(
-    distinct values(
-      for k in KOSParameters[
-        item.ortam = environment
-      ]
-      return k.serviceName
+    and
+    list contains(
+      for s in serverName
+      return split(s, "[|]")[-1],
+      "ALL"
     )
-  )
+    and
+    list contains(
+      for s in serviceName
+      return split(s, "[|]")[-1],
+      "ALL"
+    )
+then
+    sort(
+      distinct values(
+        for k in KOSParameters[
+          item.ortam = environment
+        ]
+        return k.Servername
+      )
+    )
 else
-  for s in serviceName
-  return split(s, "[|]")[-1]
+    for s in serverName
+    return split(s, "[|]")[-1]
+
+
+
+
+
+
+
+
+= if
+    list contains(
+      for r in restartType
+      return split(r, "[|]")[-1],
+      "ALL"
+    )
+    and
+    list contains(
+      for s in serverName
+      return split(s, "[|]")[-1],
+      "ALL"
+    )
+    and
+    list contains(
+      for s in serviceName
+      return split(s, "[|]")[-1],
+      "ALL"
+    )
+then
+    sort(
+      distinct values(
+        for k in KOSParameters[
+          item.ortam = environment
+        ]
+        return k.ServiceName
+      )
+    )
+else
+    for s in serviceName
+    return split(s, "[|]")[-1]
