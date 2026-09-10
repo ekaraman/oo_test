@@ -1,68 +1,36 @@
-= if
+=KOSParameters[
+  item.ortam = environment
+  and
+  (
+    some r in restartType
+    satisfies ends with(r, "|ALL")
+    or
     list contains(
       for r in restartType
       return split(r, "[|]")[-1],
-      "ALL"
+      item.RestartType
     )
-    and
+  )
+  and
+  (
+    some s in serverName
+    satisfies ends with(s, "|ALL")
+    or
     list contains(
       for s in serverName
       return split(s, "[|]")[-1],
-      "ALL"
+      item.Servername
     )
-    and
+  )
+  and
+  (
+    some s in serviceName
+    satisfies ends with(s, "|ALL")
+    or
     list contains(
       for s in serviceName
       return split(s, "[|]")[-1],
-      "ALL"
+      item.ServiceName
     )
-then
-    sort(
-      distinct values(
-        for k in KOSParameters[
-          item.ortam = environment
-        ]
-        return k.Servername
-      )
-    )
-else
-    for s in serverName
-    return split(s, "[|]")[-1]
-
-
-
-
-
-
-
-
-= if
-    list contains(
-      for r in restartType
-      return split(r, "[|]")[-1],
-      "ALL"
-    )
-    and
-    list contains(
-      for s in serverName
-      return split(s, "[|]")[-1],
-      "ALL"
-    )
-    and
-    list contains(
-      for s in serviceName
-      return split(s, "[|]")[-1],
-      "ALL"
-    )
-then
-    sort(
-      distinct values(
-        for k in KOSParameters[
-          item.ortam = environment
-        ]
-        return k.ServiceName
-      )
-    )
-else
-    for s in serviceName
-    return split(s, "[|]")[-1]
+  )
+]
