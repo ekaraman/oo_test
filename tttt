@@ -1,58 +1,45 @@
 =KOSParameters[
-  item.ortam = selectedEnvironment
+  item.ortam = environment
   and
   (
-    some r in selectedRestartType
-    satisfies split(r, "[|]")[-1] = "ALL"
+    list contains(
+      for r in restartType
+      return split(r, "[|]")[-1],
+      "ALL"
+    )
     or
     list contains(
-      for r in selectedRestartType
+      for r in restartType
       return split(r, "[|]")[-1],
       item.RestartType
     )
   )
   and
   (
-    some s in selectedServerName
-    satisfies split(s, "[|]")[-1] = "ALL"
+    list contains(
+      for s in serverName
+      return split(s, "[|]")[-1],
+      "ALL"
+    )
     or
     list contains(
-      for s in selectedServerName
+      for s in serverName
       return split(s, "[|]")[-1],
       item.Servername
     )
   )
   and
   (
-    some s in selectedServiceName
-    satisfies split(s, "[|]")[-1] = "ALL"
+    list contains(
+      for s in serviceName
+      return split(s, "[|]")[-1],
+      "ALL"
+    )
     or
     list contains(
-      for s in selectedServiceName
+      for s in serviceName
       return split(s, "[|]")[-1],
       item.ServiceName
     )
   )
 ]
-
-
-
-=distinct values(
-  for x in selectedKOSRows
-  return x.Servername
-)
-
-
-
-
-=distinct values(
-  for x in selectedKOSRows
-  return x.ServiceName
-)
-
-
-
-=distinct values(
-  for x in selectedKOSRows
-  return x.RestartType
-)
