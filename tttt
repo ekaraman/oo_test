@@ -1,12 +1,13 @@
-=to JSON({
-  GeneralParameters: tfsGeneralParameters.fileContent,
-  KosParameters: tfsKOSParameters.fileContent,
-  ServerParameters: to JSON({
-    ServerName: string join(serverNames, ";"),
-    ServiceName: string join(
-      for s in serverNames
-      return string join(serviceNames, ","),
-      ";"
-    )
-  })
-})
+={
+  environment: environment,
+  oo: {
+    url: "https://oo....",
+    flowName: "KOS"
+  },
+  aap: {
+    url: "https://aap...."
+  },
+  tfs: {
+    url: "https://tfs...."
+  }
+}
