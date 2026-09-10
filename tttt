@@ -1,48 +1,27 @@
-=KOSParameters[
-  item.ortam = environment
-  and
-  (
-    list contains(
-      for r in restartType
-      return split(r, "[|]")[-1],
-      "ALL"
-    )
-    or
-    list contains(
-      for r in restartType
-      return split(r, "[|]")[-1],
-      item.RestartType
-    )
-  )
-  and
-  (
-    list contains(
-      for s in serverName
-      return split(s, "[|]")[-1],
-      "ALL"
-    )
-    or
-    list contains(
-      for s in serverName
-      return split(s, "[|]")[-1],
-      item.Servername
-    )
-  )
-  and
-  (
-    list contains(
-      for s in serviceName
-      return split(s, "[|]")[-1],
-      "ALL"
-    )
-    or
-    list contains(
-      for s in serviceName
-      return split(s, "[|]")[-1],
-      item.ServiceName
-    )
-  )
-]
+=sort(
+  distinct values(
+    selectedKOSRows.RestartType
+  ),
+  function(x, y) x < y
+)
 
 
 
+
+=sort(
+  distinct values(
+    selectedKOSRows.Servername
+  ),
+  function(x, y) x < y
+)
+
+
+
+
+
+=sort(
+  distinct values(
+    selectedKOSRows.ServiceName
+  ),
+  function(x, y) x < y
+)
