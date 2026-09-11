@@ -1,91 +1,44 @@
-={
-  service_id: "camunda-tfs-xml-analysis",
-  max_tokens: 250,
-  temperature: 0.1,
+body: {
+  storage: {
+    value: string join([
+      "<h1>KOS OO Flow Results</h1>",
 
-  messages: [
-    {
-      role: "system",
-      content:
-        "Sen kurumsal sistem yönetimi ve OpenText Operations Orchestration konusunda deneyimli bir çözüm mimarısın. Sana verilen servis kontrol istatistiklerini kısa ve net şekilde özetle. Yalnızca düz metin üret. HTML veya Markdown kullanma. Sunucu veya servis isimlerini listeleme. En fazla 3 kısa cümle yaz."
-    },
-    {
-      role: "user",
-      content: string join([
-        "KOS servis kontrolü tamamlandı. ",
-        "Toplam kontrol edilen servis sayısı: ",
-        string(serviceTotalCount),
-        ". Çalışan servis sayısı: ",
-        string(serviceRunningCount),
-        ". Problemli veya çalışmayan servis sayısı: ",
-        string(serviceProblemCount),
-        ". Bu sonuçlara göre en fazla 3 kısa cümlelik yönetici özeti oluştur."
-      ], "")
-    }
-  ]
+      "<p><strong>Güncelleme zamanı:</strong> ",
+      string(now()),
+      "</p>",
+
+      "<h2>Özet</h2>",
+      "<p>",
+      replace(
+        replace(
+          replace(
+            aiAnalysis,
+            "&",
+            "&amp;"
+          ),
+          "<",
+          "&lt;"
+        ),
+        ">",
+        "&gt;"
+      ),
+      "</p>",
+
+      "<p><strong>Toplam servis:</strong> ",
+      string(serviceTotalCount),
+      "</p>",
+
+      "<p><strong>Çalışan servis:</strong> ",
+      string(serviceRunningCount),
+      "</p>",
+
+      "<p><strong>Problemli servis:</strong> ",
+      string(serviceProblemCount),
+      "</p>",
+
+      confluenceTableHtml
+    ], ""),
+
+    representation: "storage"
+  }
 }
-
-
-
-
-
-=replace(
-  replace(
-    replace(
-      aiAnalysis,
-      "&",
-      "&amp;"
-    ),
-    "<",
-    "&lt;"
-  ),
-  ">",
-  "&gt;"
-)
-
-
-
-
-
-
-value: string join([
-  "<h1>KOS OO Flow Results</h1>",
-
-  "<p><strong>Güncelleme zamanı:</strong> ",
-  string(now()),
-  "</p>",
-
-  "<h2>Özet</h2>",
-  "<p>",
-  safeAiAnalysis,
-  "</p>",
-
-  "<p><strong>Toplam servis:</strong> ",
-  string(serviceTotalCount),
-  "</p>",
-
-  "<p><strong>Çalışan servis:</strong> ",
-  string(serviceRunningCount),
-  "</p>",
-
-  "<p><strong>Problemli servis:</strong> ",
-  string(serviceProblemCount),
-  "</p>",
-
-  confluenceTableHtml
-], "")
-
-
-
-
-
-
-=count(
-  serviceRows[
-    item != null
-    and contains(
-      lower case(item.status),
-      "service is running"
-    )
-  ]
-)
