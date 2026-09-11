@@ -1,40 +1,14 @@
-=for row in split(string(ooFlowOutputs.ServicesStates), ",")
-return
-  if count(split(row, "[|]")) >= 3
-  then {
-    server: split(row, "[|]")[1],
-    service: split(row, "[|]")[2],
-    status: split(row, "[|]")[3]
-  }
-  else null
+=count(serviceRows[item != null])
 
 
 
-
-
-="<h2>Servis Durumları</h2>"
-+
-"<table><tbody>"
-+
-"<tr>"
-+
-"<th>Sunucu Adı</th>"
-+
-"<th>Servis Adı</th>"
-+
-"<th>Servis Durumu</th>"
-+
-"</tr>"
-+
-string join(
-  for r in serviceRows[item != null]
-  return
-    "<tr>"
-    + "<td>" + r.server + "</td>"
-    + "<td>" + r.service + "</td>"
-    + "<td>" + r.status + "</td>"
-    + "</tr>",
-  ""
+=count(
+  serviceRows[
+    item != null
+    and item.status = "Service is running."
+  ]
 )
-+
-"</tbody></table>"
+
+
+
+
