@@ -1,31 +1,27 @@
-={
-  service_id: "camunda-tfs-xml-analysis",
-  max_tokens: 500,
-  temperature: 0.1,
+value: string join([
+  "<h1>KOS OO Flow Results</h1>",
 
-  messages: [
-    {
-      role: "system",
-      content:
-        "Sen kurumsal sistem yönetimi ve OpenText Operations Orchestration konusunda deneyimli bir çözüm mimarısın. Sana verilen servis kontrol sonuçlarını kısa ve net şekilde özetle. HTML tablo üretme. Markdown kullanma. Yalnızca Confluence Storage Format ile uyumlu basit HTML kullan."
-    },
+  "<p><strong>Güncelleme zamanı:</strong> ",
+  string(now()),
+  "</p>",
 
-    {
-      role: "user",
-      content: string join([
-        "KOS servis kontrolü tamamlandı. ",
-        "Toplam kontrol edilen servis sayısı: ",
-        string(serviceTotalCount),
-        ". Çalışan servis sayısı: ",
-        string(serviceRunningCount),
-        ". Problemli veya çalışmayan servis sayısı: ",
-        string(serviceProblemCount),
-        ". ",
-        "En fazla 4-5 cümlelik yönetici özeti oluştur. ",
-        "Detaylı servis listesini yazma. ",
-        "Tablo oluşturma. ",
-        "Çıktıyı <p> etiketleri ile üret."
-      ], "")
-    }
-  ]
-}
+  "<h2>Özet</h2>",
+  aiAnalysis,
+
+  "<p><strong>Toplam servis:</strong> ",
+  string(serviceTotalCount),
+  "</p>",
+
+  "<p><strong>Çalışan servis:</strong> ",
+  string(serviceRunningCount),
+  "</p>",
+
+  "<p><strong>Problemli servis:</strong> ",
+  string(serviceProblemCount),
+  "</p>",
+
+  "<hr/>",
+
+  confluenceTableHtml
+
+], "")
