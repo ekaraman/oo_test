@@ -127,3 +127,36 @@ value: string join([
 
 
 
+
+
+={
+  service_id: "camunda-tfs-xml-analysis",
+  max_tokens: 300,
+  temperature: 0.1,
+
+  messages: [
+    {
+      role: "system",
+      content:
+        "Sen kurumsal sistem yönetimi ve OpenText Operations Orchestration konusunda deneyimli bir çözüm mimarısın. Verilen servis kontrol istatistiklerini kısa ve net şekilde özetle. Servis isimlerini veya sunucu isimlerini listeleme. Tablo oluşturma. Markdown kullanma. Yalnızca Confluence Storage Format ile uyumlu <p> etiketleri kullan. En fazla 3 kısa paragraf üret."
+    },
+    {
+      role: "user",
+      content: string join([
+        "KOS servis kontrolü tamamlandı. ",
+        "Toplam kontrol edilen servis sayısı: ",
+        string(serviceTotalCount),
+        ". Çalışan servis sayısı: ",
+        string(serviceRunningCount),
+        ". Problemli veya çalışmayan servis sayısı: ",
+        string(serviceProblemCount),
+        ". ",
+        "Bu sonuçlara göre en fazla 3 kısa paragraftan oluşan yönetici özeti oluştur. ",
+        "Servis ve sunucu isimlerini yazma. ",
+        "Detaylı liste oluşturma. ",
+        "Tablo oluşturma. ",
+        "Sadece <p>...</p> formatında çıktı döndür."
+      ], "")
+    }
+  ]
+}
