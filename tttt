@@ -1,3 +1,101 @@
+HTML üretme.
+Markdown kullanma.
+Yalnızca 3-4 cümlelik düz metin yönetici özeti döndür.
+Servis listesini tekrar etme.
+
+
+
+
+=count(
+  serviceRows[
+    item != null
+    and item.status = "Service is running."
+  ]
+)
+
+
+
+=replace(
+  replace(
+    replace(
+      aiAnalysis,
+      "&",
+      "&amp;"
+    ),
+    "<",
+    "&lt;"
+  ),
+  ">",
+  "&gt;"
+)
+
+
+
+="<h2>Servis Durumları</h2>"
++
+"<table><tbody>"
++
+"<tr>"
++
+"<th>Sunucu Adı</th>"
++
+"<th>Servis Adı</th>"
++
+"<th>Servis Durumu</th>"
++
+"</tr>"
++
+string join(
+  for r in serviceRows[item != null]
+  return
+    "<tr>"
+    +
+    "<td>"
+    +
+    replace(
+      replace(
+        replace(r.server, "&", "&amp;"),
+        "<", "&lt;"
+      ),
+      ">", "&gt;"
+    )
+    +
+    "</td>"
+    +
+    "<td>"
+    +
+    replace(
+      replace(
+        replace(r.service, "&", "&amp;"),
+        "<", "&lt;"
+      ),
+      ">", "&gt;"
+    )
+    +
+    "</td>"
+    +
+    "<td>"
+    +
+    replace(
+      replace(
+        replace(r.status, "&", "&amp;"),
+        "<", "&lt;"
+      ),
+      ">", "&gt;"
+    )
+    +
+    "</td>"
+    +
+    "</tr>",
+  ""
+)
++
+"</tbody></table>"
+
+
+
+
+
 value: string join([
   "<h1>KOS OO Flow Results</h1>",
 
@@ -6,7 +104,9 @@ value: string join([
   "</p>",
 
   "<h2>Özet</h2>",
-  aiAnalysis,
+  "<p>",
+  safeAiAnalysis,
+  "</p>",
 
   "<p><strong>Toplam servis:</strong> ",
   string(serviceTotalCount),
@@ -20,8 +120,10 @@ value: string join([
   string(serviceProblemCount),
   "</p>",
 
-  "<hr/>",
-
   confluenceTableHtml
-
 ], "")
+
+
+
+
+
