@@ -1,44 +1,15 @@
-body: {
-  storage: {
-    value: string join([
-      "<h1>KOS OO Flow Results</h1>",
-
-      "<p><strong>Güncelleme zamanı:</strong> ",
-      string(now()),
-      "</p>",
-
-      "<h2>Özet</h2>",
-      "<p>",
-      replace(
-        replace(
-          replace(
-            aiAnalysis,
-            "&",
-            "&amp;"
-          ),
-          "<",
-          "&lt;"
-        ),
-        ">",
-        "&gt;"
-      ),
-      "</p>",
-
-      "<p><strong>Toplam servis:</strong> ",
-      string(serviceTotalCount),
-      "</p>",
-
-      "<p><strong>Çalışan servis:</strong> ",
-      string(serviceRunningCount),
-      "</p>",
-
-      "<p><strong>Problemli servis:</strong> ",
-      string(serviceProblemCount),
-      "</p>",
-
-      confluenceTableHtml
-    ], ""),
-
-    representation: "storage"
-  }
+$body = @{
+    grant_type    = "password"
+    client_id     = "jira-camunda-user"
+    client_secret = "<CLIENT_SECRET>"
+    username      = "<LDAP_USERNAME>"
+    password      = "<LDAP_PASSWORD>"
 }
+
+$response = Invoke-RestMethod `
+    -Method POST `
+    -Uri "https://camunda-keycloak.seip-vip-prd-ocpgen10.qnb.com.tr/auth/realms/camunda-platform/protocol/openid-connect/token" `
+    -ContentType "application/x-www-form-urlencoded" `
+    -Body $body
+
+$token = $response.access_token
