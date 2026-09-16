@@ -1,21 +1,68 @@
 
-=to json({
-  ServerName:
-    string join(
-      distinct values(selectedKOSRows.Servername),
-      ";"
-    ),
+=if environment = null or restartType = null or serverName = null
+then []
+else
+  if list contains(
+    for x in (if serviceName = null then [] else serviceName)
+    return split(x, "[|]")[-1],
+    "ALL"
+  )
+  then [
+    {
+      label: "ALL",
+      value: environment + "|ALL|ALL|ALL"
+    }
+  ]
+  else
+    concatenate(
+      [
+        {
+          label: "ALL",
+          value: environment + "|ALL|ALL|ALL"
+        }
+      ],
+      for row in KOSParameters[
+        item.Ortam = environment
+        and
+        (
+          list contains(
+            for rt in restartType
+            return split(rt, "[|]")[-1],
+            "ALL"
+          )
+          or
+          list contains(
+            for rt in restartType
+            return split(rt, "[|]")[-1],
+            item.RestartType
+          )
+        )
+        and
+        (
+          list contains(
+            for sn in serverName
+            return split(sn, "[|]")[-1],
+            "ALL"
+          )
+          or
+          list contains(
+            for sn in serverName
+            return split(sn, "[|]")[-1],
+            item.Servername
+          )
+        )
+      ]
+      return {
+        label:
+          row.Ortam + " | " +
+          row.RestartType + " | " +
+          row.Servername + " | " +
+          row.ServiceName,
 
-  ServiceName:
-    string join(
-      for s in distinct values(selectedKOSRows.Servername)
-      return
-        string join(
-          distinct values(
-            selectedKOSRows[Servername = s].ServiceName
-          ),
-          ","
-        ),
-      ";"
+        value:
+          row.Ortam + "|" +
+          row.RestartType + "|" +
+          row.Servername + "|" +
+          row.ServiceName
+      }
     )
-})
