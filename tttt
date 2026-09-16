@@ -1,6 +1,20 @@
 
-=for row in KOSParameters
-return {
-  label: "KOS kaydı",
-  value: row
-}
+=if environment = null
+then []
+else
+  for row in KOSParameters[
+    item.ortam = environment
+  ]
+  return {
+    label:
+      row.ortam + " | " +
+      row.RestartType + " | " +
+      row.Servername + " | " +
+      row.ServiceName,
+
+    value:
+      row.ortam + "|" +
+      row.RestartType + "|" +
+      row.Servername + "|" +
+      row.ServiceName
+  }
