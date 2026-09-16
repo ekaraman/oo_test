@@ -1,9 +1,29 @@
 
-=if environment = null
+=if environment = null or
+    restartType = null or
+    serverName = null
 then []
 else
   for row in KOSParameters[
     item.ortam = environment
+
+    and
+
+    (
+      some rt in restartType satisfies
+        split(rt, "[|]")[2] = "ALL"
+        or
+        split(rt, "[|]")[2] = item.RestartType
+    )
+
+    and
+
+    (
+      some sn in serverName satisfies
+        split(sn, "[|]")[3] = "ALL"
+        or
+        split(sn, "[|]")[3] = item.Servername
+    )
   ]
   return {
     label:
