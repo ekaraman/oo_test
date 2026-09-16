@@ -4,37 +4,45 @@
     serverName = null
 then []
 else
-  for row in KOSParameters[
-    item.ortam = environment
+  concatenate(
+    [
+      {
+        label: "ALL",
+        value: "ALL"
+      }
+    ],
+    for row in KOSParameters[
+      item.ortam = environment
 
-    and
+      and
 
-    (
-      some rt in restartType satisfies
-        split(rt, "[|]")[2] = "ALL"
-        or
-        split(rt, "[|]")[2] = item.RestartType
-    )
+      (
+        some rt in restartType satisfies
+          split(rt, "[|]")[2] = "ALL"
+          or
+          split(rt, "[|]")[2] = item.RestartType
+      )
 
-    and
+      and
 
-    (
-      some sn in serverName satisfies
-        split(sn, "[|]")[3] = "ALL"
-        or
-        split(sn, "[|]")[3] = item.Servername
-    )
-  ]
-  return {
-    label:
-      row.ortam + " | " +
-      row.RestartType + " | " +
-      row.Servername + " | " +
-      row.ServiceName,
+      (
+        some sn in serverName satisfies
+          split(sn, "[|]")[3] = "ALL"
+          or
+          split(sn, "[|]")[3] = item.Servername
+      )
+    ]
+    return {
+      label:
+        row.ortam + " | " +
+        row.RestartType + " | " +
+        row.Servername + " | " +
+        row.ServiceName,
 
-    value:
-      row.ortam + "|" +
-      row.RestartType + "|" +
-      row.Servername + "|" +
-      row.ServiceName
-  }
+      value:
+        row.ortam + "|" +
+        row.RestartType + "|" +
+        row.Servername + "|" +
+        row.ServiceName
+    }
+  )
