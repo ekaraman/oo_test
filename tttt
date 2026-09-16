@@ -7,6 +7,14 @@ then []
 else if count(restartType) = 0 or
         count(serverName) = 0
 then []
+else if serviceName != null and
+        list contains(serviceName, "ALL")
+then [
+  {
+    label: "ALL",
+    value: "ALL"
+  }
+]
 else
   concatenate(
     [
