@@ -1,7 +1,11 @@
 
 =if environment = null or
+    environment = "" or
     restartType = null or
     serverName = null
+then []
+else if count(restartType) = 0 or
+        count(serverName) = 0
 then []
 else
   concatenate(
