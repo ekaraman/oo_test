@@ -1,32 +1,21 @@
-$tokenUrl = "https://camunda-keycloak.seip-vip-prd-ocpgen10.qnb.com.tr/auth/realms/camunda-platform/protocol/openid-connect/token"
 
-$clientId = "jira-camunda"
-$clientSecret = "<CLIENT_SECRET>"
+=to json({
+  ServerName:
+    string join(
+      distinct values(selectedKOSRows.Servername),
+      ";"
+    ),
 
-$tokenResponse = Invoke-RestMethod `
-    -Method POST `
-    -Uri $tokenUrl `
-    -ContentType "application/x-www-form-urlencoded" `
-    -Body @{
-        grant_type    = "client_credentials"
-        client_id     = $clientId
-        client_secret = $clientSecret
-    }
-
-$token = $tokenResponse.access_token
-
-$headers = @{
-    Authorization = "Bearer $token"
-    Accept        = "application/json"
-}
-
-$body = @{} | ConvertTo-Json
-
-$result = Invoke-RestMethod `
-    -Method POST `
-    -Uri "https://camunda-operate.seip-vip-prd-ocpgen10.qnb.com.tr/v2/cluster-variables/search?truncateValues=false" `
-    -Headers $headers `
-    -ContentType "application/json" `
-    -Body $body
-
-$result.items
+  ServiceName:
+    string join(
+      for s in distinct values(selectedKOSRows.Servername)
+      return
+        string join(
+          distinct values(
+            selectedKOSRows[Servername = s].ServiceName
+          ),
+          ","
+        ),
+      ";"
+    )
+})
