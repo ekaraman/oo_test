@@ -1,1 +1,4 @@
 wget -qO- -T 15 "http://camunda-platform-elasticsearch:9200/_cat/indices/*optimize*?v"
+
+
+wget -qO- "http://camunda-platform-elasticsearch:9200/optimize-process-instance-oo_workflow_process_v8/_mapping?pretty"
