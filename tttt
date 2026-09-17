@@ -1,109 +1,167 @@
 
-# ==========================================
+# ==============================================
 # CAMUNDA DRC - ONAY SURELERI RAPORU
-# Keycloak Token + Camunda API + CSV
-# ==========================================
+# ==============================================
 
 $ErrorActionPreference = "Stop"
 
-# ==========================================
-# 1. BAGLANTI BILGILERI
-# ==========================================
+# 1. SABIT BILGILER
 
-$TokenUrl = Read-Host "Keycloak Token URL"
+$TokenUrl = "https://camunda-auth.qnb.com.tr/auth/realms/camunda-platform/protocol/openid-connect/token"
 
-$ApiBase = Read-Host "Camunda API adresi"
+$ApiBase = "https://camunda-operate.qnb.com.tr"
 
-$ClientId = Read-Host "Client ID"
-
-$ClientSecretSecure = Read-Host "Client Secret" -AsSecureString
+$ClientId = "jira-camunda"
 
 $ProcessInstanceKey = "2251799817545821"
 
-# ==========================================
-# 2. KEYCLOAK ACCESS TOKEN AL
-# ==========================================
+$ApiUrl = "$ApiBase/v2/element-instances/search"
+
+$CsvPath = Join-Path -Path (Get-Location).Path `
+    -ChildPath "DRC_Onay_Sureleri.csv"
+
+
+# ==============================================
+# 2. KEYCLOAK TOKEN AL
+# ==============================================
 
 Write-Host ""
-Write-Host "Keycloak token aliniyor..." -ForegroundColor Cyan
+Write-Host "========== KEYCLOAK ==========" -ForegroundColor Cyan
 
-$bstr = [Runtime.InteropServices.Marshal]::SecureStringToBSTR(
-    $ClientSecretSecure
-)
+$secureSecret = Read-Host "Client Secret" -AsSecureString
+
+$bstr = [IntPtr]::Zero
 
 try {
-    $ClientSecret = [Runtime.InteropServices.Marshal]::PtrToStringBSTR(
+
+    $bstr = [Runtime.InteropServices.Marshal]::SecureStringToBSTR(
+        $secureSecret
+    )
+
+    $plainSecret = [Runtime.InteropServices.Marshal]::PtrToStringBSTR(
         $bstr
     )
-}
-finally {
-    [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($bstr)
-}
-
-try {
 
     $tokenBody = @{
         grant_type    = "client_credentials"
         client_id     = $ClientId
-        client_secret = $ClientSecret
+        client_secret = $plainSecret
     }
+
+    Write-Host "Token aliniyor..."
 
     $tokenResponse = Invoke-RestMethod `
         -Uri $TokenUrl `
-        -Method Post `
+        -Method POST `
         -ContentType "application/x-www-form-urlencoded" `
         -Body $tokenBody
 
     $AccessToken = $tokenResponse.access_token
 
-    if ([string]::IsNullOrWhiteSpace($AccessToken)) {
-        throw "Token yanitinda access_token bulunamadi."
-    }
-
-    Write-Host "Token basariyla alindi." -ForegroundColor Green
-
 }
 catch {
-    Write-Host "Token alma hatasi: $($_.Exception.Message)" -ForegroundColor Red
+
+    Write-Host "Token hatasi: $($_.Exception.Message)" `
+        -ForegroundColor Red
+
     return
+
 }
 finally {
-    $ClientSecret = $null
-    $ClientSecretSecure = $null
+
+    if ($bstr -ne [IntPtr]::Zero) {
+        [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($bstr)
+    }
+
+    if ($tokenBody) {
+        $tokenBody.Clear()
+    }
+
+    $plainSecret = $null
+    $secureSecret = $null
     $tokenBody = $null
+    $tokenResponse = $null
+
 }
 
-# ==========================================
-# 3. CAMUNDA API BAGLANTISI
-# ==========================================
+if ([string]::IsNullOrWhiteSpace($AccessToken)) {
 
-$ApiUrl = $ApiBase.TrimEnd('/') + "/v2/element-instances/search"
+    Write-Host "Access token bulunamadi." -ForegroundColor Red
+    return
+
+}
+
+Write-Host "Token basariyla alindi." -ForegroundColor Green
+
+
+# ==============================================
+# 3. API HEADERS
+# ==============================================
 
 $headers = @{
     Authorization = "Bearer $AccessToken"
     Accept        = "application/json"
 }
 
+
+# ==============================================
+# 4. PROCESS INSTANCE KONTROLU
+# ==============================================
+
 Write-Host ""
-Write-Host "Camunda onay kayitlari getiriliyor..." -ForegroundColor Cyan
+Write-Host "========== PROCESS KONTROL ==========" `
+    -ForegroundColor Cyan
 
-# ==========================================
-# 4. TUM USER TASK KAYITLARINI GETIR
-# ==========================================
+$process = $null
 
-$allTasks = @()
+try {
+
+    $processUrl = "$ApiBase/v2/process-instances/$ProcessInstanceKey"
+
+    $process = Invoke-RestMethod `
+        -Uri $processUrl `
+        -Method GET `
+        -Headers $headers
+
+    Write-Host "Process bulundu." -ForegroundColor Green
+
+    Write-Host "Process Key: $($process.processInstanceKey)"
+    Write-Host "Durum: $($process.state)"
+    Write-Host "Baslangic: $($process.startDate)"
+    Write-Host "Bitis: $($process.endDate)"
+
+}
+catch {
+
+    Write-Warning "Process kontrolu basarisiz: $($_.Exception.Message)"
+
+    Write-Host "Element sorgusuna devam ediliyor..."
+
+}
+
+
+# ==============================================
+# 5. ELEMENT INSTANCE KAYITLARINI GETIR
+# ==============================================
+
+Write-Host ""
+Write-Host "========== ELEMENT SORGUSU ==========" `
+    -ForegroundColor Cyan
+
+$allElements = @()
 
 $offset = 0
 $limit = 500
+$lastResponse = $null
 
 try {
 
     do {
 
-        $body = @{
+        $requestBody = @{
+
             filter = @{
                 processInstanceKey = $ProcessInstanceKey
-                type = "USER_TASK"
             }
 
             sort = @(
@@ -122,104 +180,240 @@ try {
 
         $response = Invoke-RestMethod `
             -Uri $ApiUrl `
-            -Method Post `
+            -Method POST `
             -Headers $headers `
             -ContentType "application/json" `
-            -Body $body
+            -Body $requestBody
 
-        $tasks = @(
+        $lastResponse = $response
+
+        # API yanitinin yapisini kontrol et
+
+        if ($null -eq $response -or
+            $null -eq $response.PSObject.Properties["items"]) {
+
+            Write-Host "Beklenmeyen API yaniti!" `
+                -ForegroundColor Red
+
+            Write-Host "Yanit alanlari:"
+
+            if ($null -ne $response) {
+                $response.PSObject.Properties.Name
+            }
+
+            return
+        }
+
+        $elements = @(
             $response.items | Where-Object {
                 $null -ne $_
             }
         )
 
-        $allTasks += $tasks
+        $allElements += $elements
 
-        $offset += $tasks.Count
+        $offset += $elements.Count
 
-        Write-Host "Alinan kayit sayisi: $($allTasks.Count)"
+        Write-Host "Alinan kayit: $($allElements.Count)"
 
-    } while ($tasks.Count -eq $limit)
+    } while ($elements.Count -eq $limit)
 
 }
 catch {
 
     Write-Host ""
-    Write-Host "Camunda API hatasi: $($_.Exception.Message)" -ForegroundColor Red
+    Write-Host "Camunda API hatasi:" -ForegroundColor Red
+
+    Write-Host $_.Exception.Message -ForegroundColor Red
 
     return
 
 }
 finally {
+
     $AccessToken = $null
-    $headers = $null
-    $tokenResponse = $null
+    $headers.Authorization = $null
+
 }
 
-# ==========================================
-# 5. ONAY SURELERINI HESAPLA
-# ==========================================
+
+# ==============================================
+# 6. SIFIR KAYIT KONTROLU
+# ==============================================
+
+if ($allElements.Count -eq 0) {
+
+    Write-Host ""
+    Write-Host "========== TANI BILGILERI ==========" `
+        -ForegroundColor Yellow
+
+    Write-Host "Element kaydi bulunamadi."
+
+    Write-Host "API: $ApiUrl"
+
+    Write-Host "Process Key: $ProcessInstanceKey"
+
+    Write-Host ""
+    Write-Host "API yanit alanlari:"
+
+    $lastResponse.PSObject.Properties.Name
+
+    Write-Host ""
+    Write-Host "Sayfalama bilgisi:"
+
+    $lastResponse.page | ConvertTo-Json -Depth 5
+
+    Write-Host ""
+    Write-Host "Rapor olusturulmadi."
+
+    return
+
+}
+
+
+# ==============================================
+# 7. ELEMENT TURLERINI GOSTER
+# ==============================================
+
+Write-Host ""
+Write-Host "========== ELEMENT TURLERI ==========" `
+    -ForegroundColor Cyan
+
+$allElements |
+    Group-Object type |
+    Select-Object Name, Count |
+    Format-Table -AutoSize
+
+
+# ==============================================
+# 8. ONAY ADIMLARINI FILTRELE
+# ==============================================
+
+$tasks = @(
+    $allElements | Where-Object {
+        $_.type -in @(
+            "USER_TASK",
+            "MANUAL_TASK",
+            "TASK"
+        )
+    }
+)
+
+Write-Host ""
+Write-Host "Bulunan onay/gorev kaydi: $($tasks.Count)" `
+    -ForegroundColor Green
+
+if ($tasks.Count -eq 0) {
+
+    Write-Warning "Onay/gorev tipi bulunamadi."
+
+    Write-Host ""
+    Write-Host "Ilk 10 element:"
+
+    $allElements |
+        Select-Object -First 10 `
+            elementName, elementId, type, state |
+        Format-Table -AutoSize
+
+    return
+
+}
+
+
+# ==============================================
+# 9. SURE HESAPLAMA
+# ==============================================
+
+Write-Host ""
+Write-Host "Sureler hesaplaniyor..." -ForegroundColor Cyan
 
 $now = [DateTimeOffset]::UtcNow
 
 $report = @(
 
-    foreach ($task in $allTasks) {
+    foreach ($task in $tasks) {
 
-        if (-not $task.startDate) {
-            Write-Warning "Baslangic tarihi olmayan kayit atlandi."
+        if ([string]::IsNullOrWhiteSpace($task.startDate)) {
+
+            Write-Warning "Baslangic tarihi yok: $($task.elementId)"
             continue
-        }
-
-        $start = [DateTimeOffset]::Parse($task.startDate)
-
-        if ($task.endDate) {
-
-            $end = [DateTimeOffset]::Parse($task.endDate)
-
-        }
-        else {
-
-            $end = $now
 
         }
 
-        $duration = $end - $start
+        try {
 
-        $taskName = $task.elementName
-
-        if ([string]::IsNullOrWhiteSpace($taskName)) {
-            $taskName = $task.elementId
-        }
-
-        [PSCustomObject]@{
-
-            OnayAdi = $taskName
-
-            Baslangic = $start.ToLocalTime().ToString(
-                "yyyy-MM-dd HH:mm:ss"
+            $start = [DateTimeOffset]::Parse(
+                [string]$task.startDate
             )
 
-            Bitis = if ($task.endDate) {
-                $end.ToLocalTime().ToString(
+            $isCompleted = -not [string]::IsNullOrWhiteSpace(
+                [string]$task.endDate
+            )
+
+            if ($isCompleted) {
+
+                $end = [DateTimeOffset]::Parse(
+                    [string]$task.endDate
+                )
+
+                $endText = $end.ToLocalTime().ToString(
                     "yyyy-MM-dd HH:mm:ss"
                 )
+
+                $durationType = "Kesin"
+
             }
             else {
-                ""
+
+                $end = $now
+                $endText = ""
+
+                $durationType = "Devam ediyor"
+
             }
 
-            SureDakika = [math]::Round(
-                $duration.TotalMinutes, 2
-            )
+            $duration = $end - $start
 
-            SureSaat = [math]::Round(
-                $duration.TotalHours, 2
-            )
+            $taskName = $task.elementName
 
-            Durum = $task.state
+            if ([string]::IsNullOrWhiteSpace($taskName)) {
+                $taskName = $task.elementId
+            }
 
-            ElementInstanceKey = $task.elementInstanceKey
+            [PSCustomObject]@{
+
+                OnayAdi = $taskName
+
+                Baslangic = $start.ToLocalTime().ToString(
+                    "yyyy-MM-dd HH:mm:ss"
+                )
+
+                Bitis = $endText
+
+                SureDakika = [math]::Round(
+                    $duration.TotalMinutes, 2
+                )
+
+                SureSaat = [math]::Round(
+                    $duration.TotalHours, 2
+                )
+
+                Durum = $task.state
+
+                SureTipi = $durationType
+
+                ElementType = $task.type
+
+                ElementId = $task.elementId
+
+                ElementInstanceKey = $task.elementInstanceKey
+
+            }
+
+        }
+        catch {
+
+            Write-Warning "Sure hesaplanamadi: $($task.elementId)"
 
         }
 
@@ -227,31 +421,109 @@ $report = @(
 
 )
 
-# ==========================================
-# 6. RAPORU SIRALA VE GOSTER
-# ==========================================
 
-$report = @($report | Sort-Object Baslangic)
+# ==============================================
+# 10. RAPORU SIRALA
+# ==============================================
 
-Write-Host ""
-Write-Host "========== DRC ONAY RAPORU ==========" -ForegroundColor Cyan
+$report = @(
+    $report | Sort-Object Baslangic
+)
 
-$report |
-    Format-Table OnayAdi, Baslangic, Bitis, SureDakika, Durum -AutoSize
 
-# ==========================================
-# 7. CSV DOSYASI OLUSTUR
-# ==========================================
-
-$csvPath = Join-Path $PSScriptRoot "DRC_Onay_Sureleri.csv"
-
-$report |
-    Export-Csv `
-        -Path $csvPath `
-        -NoTypeInformation `
-        -Delimiter ";" `
-        -Encoding UTF8
+# ==============================================
+# 11. RAPORU EKRANDA GOSTER
+# ==============================================
 
 Write-Host ""
-Write-Host "Toplam onay kaydi: $($report.Count)" -ForegroundColor Green
-Write-Host "CSV raporu: $csvPath" -ForegroundColor Green
+Write-Host "========== DRC ONAY RAPORU ==========" `
+    -ForegroundColor Cyan
+
+if ($report.Count -eq 0) {
+
+    Write-Warning "Raporlanabilecek kayit bulunamadi."
+    return
+
+}
+
+$report |
+    Format-Table `
+        OnayAdi, Baslangic, Bitis, SureDakika, Durum `
+        -AutoSize
+
+
+# ==============================================
+# 12. TOPLAM PROCESS SURESI
+# ==============================================
+
+if ($null -ne $process -and $process.startDate) {
+
+    $processStart = [DateTimeOffset]::Parse(
+        [string]$process.startDate
+    )
+
+    if ($process.endDate) {
+
+        $processEnd = [DateTimeOffset]::Parse(
+            [string]$process.endDate
+        )
+
+    }
+    else {
+
+        $processEnd = $now
+
+    }
+
+    $processDuration = $processEnd - $processStart
+
+    Write-Host ""
+    Write-Host "========== TOPLAM DRC SURESI ==========" `
+        -ForegroundColor Cyan
+
+    Write-Host "Toplam gecen dakika: $([math]::Round($processDuration.TotalMinutes,2))"
+
+    Write-Host "Toplam gecen saat: $([math]::Round($processDuration.TotalHours,2))"
+
+    if (-not $process.endDate) {
+
+        Write-Host "Process halen devam ediyor." `
+            -ForegroundColor Yellow
+
+    }
+
+}
+
+
+# ==============================================
+# 13. CSV DOSYASI OLUSTUR
+# ==============================================
+
+Write-Host ""
+Write-Host "CSV dosyasi olusturuluyor..." -ForegroundColor Cyan
+
+try {
+
+    $report |
+        Export-Csv `
+            -Path $CsvPath `
+            -NoTypeInformation `
+            -Delimiter ";" `
+            -Encoding UTF8
+
+    Write-Host ""
+    Write-Host "Rapor basariyla olusturuldu!" `
+        -ForegroundColor Green
+
+    Write-Host "Toplam onay kaydi: $($report.Count)"
+
+    Write-Host "CSV dosyasi: $CsvPath" `
+        -ForegroundColor Green
+
+}
+catch {
+
+    Write-Host "CSV hatasi: $($_.Exception.Message)" `
+        -ForegroundColor Red
+
+}
