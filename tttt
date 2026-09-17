@@ -1,39 +1,98 @@
 
 # ==========================================
 # CAMUNDA DRC - ONAY SURELERI RAPORU
+# Keycloak Token + Camunda API + CSV
 # ==========================================
 
-# 1. Camunda API adresi
-# Ornek: https://camunda-api.sirket.com
-# Adresin sonuna /v2 EKLEMEYIN.
+$ErrorActionPreference = "Stop"
+
+# ==========================================
+# 1. BAGLANTI BILGILERI
+# ==========================================
+
+$TokenUrl = Read-Host "Keycloak Token URL"
 
 $ApiBase = Read-Host "Camunda API adresi"
 
-# 2. Process Instance Key
+$ClientId = Read-Host "Client ID"
+
+$ClientSecretSecure = Read-Host "Client Secret" -AsSecureString
+
 $ProcessInstanceKey = "2251799817545821"
 
-# 3. Access token
-$secureToken = Read-Host "Access Token" -AsSecureString
+# ==========================================
+# 2. KEYCLOAK ACCESS TOKEN AL
+# ==========================================
 
-$bstr = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($secureToken)
+Write-Host ""
+Write-Host "Keycloak token aliniyor..." -ForegroundColor Cyan
+
+$bstr = [Runtime.InteropServices.Marshal]::SecureStringToBSTR(
+    $ClientSecretSecure
+)
 
 try {
-    $token = [Runtime.InteropServices.Marshal]::PtrToStringBSTR($bstr)
+    $ClientSecret = [Runtime.InteropServices.Marshal]::PtrToStringBSTR(
+        $bstr
+    )
 }
 finally {
     [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($bstr)
 }
 
-# 4. API ayarlari
-$uri = $ApiBase.TrimEnd('/') + "/v2/element-instances/search"
+try {
+
+    $tokenBody = @{
+        grant_type    = "client_credentials"
+        client_id     = $ClientId
+        client_secret = $ClientSecret
+    }
+
+    $tokenResponse = Invoke-RestMethod `
+        -Uri $TokenUrl `
+        -Method Post `
+        -ContentType "application/x-www-form-urlencoded" `
+        -Body $tokenBody
+
+    $AccessToken = $tokenResponse.access_token
+
+    if ([string]::IsNullOrWhiteSpace($AccessToken)) {
+        throw "Token yanitinda access_token bulunamadi."
+    }
+
+    Write-Host "Token basariyla alindi." -ForegroundColor Green
+
+}
+catch {
+    Write-Host "Token alma hatasi: $($_.Exception.Message)" -ForegroundColor Red
+    return
+}
+finally {
+    $ClientSecret = $null
+    $ClientSecretSecure = $null
+    $tokenBody = $null
+}
+
+# ==========================================
+# 3. CAMUNDA API BAGLANTISI
+# ==========================================
+
+$ApiUrl = $ApiBase.TrimEnd('/') + "/v2/element-instances/search"
 
 $headers = @{
-    Authorization = "Bearer $token"
+    Authorization = "Bearer $AccessToken"
     Accept        = "application/json"
 }
 
-# 5. Butun onay kayitlarini getir
+Write-Host ""
+Write-Host "Camunda onay kayitlari getiriliyor..." -ForegroundColor Cyan
+
+# ==========================================
+# 4. TUM USER TASK KAYITLARINI GETIR
+# ==========================================
+
 $allTasks = @()
+
 $offset = 0
 $limit = 500
 
@@ -62,44 +121,67 @@ try {
         } | ConvertTo-Json -Depth 10
 
         $response = Invoke-RestMethod `
-            -Uri $uri `
+            -Uri $ApiUrl `
             -Method Post `
             -Headers $headers `
             -ContentType "application/json" `
-            -Body $body `
-            -ErrorAction Stop
+            -Body $body
 
-        $tasks = @($response.items | Where-Object { $null -ne $_ })
+        $tasks = @(
+            $response.items | Where-Object {
+                $null -ne $_
+            }
+        )
 
         $allTasks += $tasks
 
         $offset += $tasks.Count
 
+        Write-Host "Alinan kayit sayisi: $($allTasks.Count)"
+
     } while ($tasks.Count -eq $limit)
 
 }
 catch {
-    Write-Host "API hatasi: $($_.Exception.Message)" -ForegroundColor Red
+
+    Write-Host ""
+    Write-Host "Camunda API hatasi: $($_.Exception.Message)" -ForegroundColor Red
+
     return
+
 }
 finally {
-    $token = $null
-    $headers.Authorization = $null
+    $AccessToken = $null
+    $headers = $null
+    $tokenResponse = $null
 }
 
-# 6. Sure hesaplama
+# ==========================================
+# 5. ONAY SURELERINI HESAPLA
+# ==========================================
+
 $now = [DateTimeOffset]::UtcNow
 
 $report = @(
+
     foreach ($task in $allTasks) {
+
+        if (-not $task.startDate) {
+            Write-Warning "Baslangic tarihi olmayan kayit atlandi."
+            continue
+        }
 
         $start = [DateTimeOffset]::Parse($task.startDate)
 
         if ($task.endDate) {
+
             $end = [DateTimeOffset]::Parse($task.endDate)
+
         }
         else {
+
             $end = $now
+
         }
 
         $duration = $end - $start
@@ -114,10 +196,14 @@ $report = @(
 
             OnayAdi = $taskName
 
-            Baslangic = $start.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss")
+            Baslangic = $start.ToLocalTime().ToString(
+                "yyyy-MM-dd HH:mm:ss"
+            )
 
             Bitis = if ($task.endDate) {
-                $end.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss")
+                $end.ToLocalTime().ToString(
+                    "yyyy-MM-dd HH:mm:ss"
+                )
             }
             else {
                 ""
@@ -134,19 +220,30 @@ $report = @(
             Durum = $task.state
 
             ElementInstanceKey = $task.elementInstanceKey
+
         }
+
     }
+
 )
 
-# 7. Baslangic saatine gore sirala
+# ==========================================
+# 6. RAPORU SIRALA VE GOSTER
+# ==========================================
+
 $report = @($report | Sort-Object Baslangic)
 
-# 8. Ekranda goster
+Write-Host ""
+Write-Host "========== DRC ONAY RAPORU ==========" -ForegroundColor Cyan
+
 $report |
     Format-Table OnayAdi, Baslangic, Bitis, SureDakika, Durum -AutoSize
 
-# 9. CSV raporu olustur
-$csvPath = Join-Path $PWD.Path "DRC_Onay_Sureleri.csv"
+# ==========================================
+# 7. CSV DOSYASI OLUSTUR
+# ==========================================
+
+$csvPath = Join-Path $PSScriptRoot "DRC_Onay_Sureleri.csv"
 
 $report |
     Export-Csv `
@@ -157,4 +254,4 @@ $report |
 
 Write-Host ""
 Write-Host "Toplam onay kaydi: $($report.Count)" -ForegroundColor Green
-Write-Host "Rapor: $csvPath" -ForegroundColor Green
+Write-Host "CSV raporu: $csvPath" -ForegroundColor Green
