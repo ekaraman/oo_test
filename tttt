@@ -1,4 +1,4 @@
-wget -qO- --method=POST \
+wget -qO- --method=PUT \
 --header='Content-Type: application/json' \
---body-data='{"size":0,"query":{"term":{"value.processInstanceKey":2251799817050493}},"aggs":{"activities":{"terms":{"field":"value.elementId","size":30}}}}' \
-'http://camunda-platform-elasticsearch:9200/zeebe-record_process-instance_*/_search'
+--body-data='{"index.mapping.nested_objects.limit":30000}' \
+'http://camunda-platform-elasticsearch:9200/optimize-process-instance-*/_settings'
