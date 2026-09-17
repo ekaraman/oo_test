@@ -1,1 +1,4 @@
-grep -Ein -A 12 'ERROR|Exception|health check|unhealthy' /optimize/logs/* 2>/dev/null | tail -100
+wget -qO- -T 10 http://localhost:8090/actuator/health/readiness
+
+
+wget -qO- -T 10 http://localhost:8090/actuator/health
