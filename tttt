@@ -1,4 +1,1 @@
-wget -qO- --method=POST \
-  --header="Content-Type: application/json" \
-  --body-data='{"query":{"match_all":{}}}' \
-  "http://camunda-platform-elasticsearch:9200/optimize-process-instance-oo_workflow_process_v8/_delete_by_query?refresh=true&wait_for_completion=true"
+wget -qO- "http://camunda-platform-elasticsearch:9200/optimize-process-instance-oo_workflow_process_v8/_count?pretty"
