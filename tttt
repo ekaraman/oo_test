@@ -1,1 +1,4 @@
-wget -qO- 'http://camunda-platform-elasticsearch:9200/optimize-process-instance-oo_workflow_process_v8/_settings/index.mapping.nested_objects.limit?flat_settings=true'
+wget -qO- --method=POST \
+  --header='Content-Type: application/json' \
+  --body-data='{"size":10,"_source":false,"query":{"ids":{"values":["1:5065357","1:5048165"]}}}' \
+  'http://camunda-platform-elasticsearch:9200/optimize-process-instance-*/_search'
