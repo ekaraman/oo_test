@@ -1,1 +1,1 @@
-wget -S -O /dev/null -T 10 http://localhost:8090/actuator/health 2>&1
+wget -S -O - -T 10 http://localhost:8090/actuator/health/readiness 2>&1
