@@ -1,4 +1,1 @@
-wget -qO- --method=POST \
---header='Content-Type: application/json' \
---body-data='{"size":1,"query":{"term":{"value.processInstanceKey":2251799817050493}},"sort":[{"position":{"order":"desc"}}],"_source":["value.processInstanceKey","value.bpmnProcessId","value.elementId","intent","position"]}' \
-'http://camunda-platform-elasticsearch:9200/zeebe-record_process-instance_*/_search'
+wget -qO- 'http://camunda-platform-elasticsearch:9200/_cat/indices/optimize-*?v&h=index,docs.count,store.size'
