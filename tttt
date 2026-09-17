@@ -19,6 +19,8 @@ $ApiUrl = "$ApiBase/v2/element-instances/search"
 
 $CsvPath = Join-Path -Path (Get-Location).Path -ChildPath "DRC_Onay_Sureleri.csv"
 
+$tr = [System.Globalization.CultureInfo]::GetCultureInfo("tr-TR")
+
 $headers = $null
 
 try {
@@ -35,12 +37,13 @@ try {
     $bstr = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($secureSecret)
 
     try {
-        $clientSecret = [Runtime.InteropServices.Marshal]::PtrToStringBSTR($bstr)
+
+        $plainSecret = [Runtime.InteropServices.Marshal]::PtrToStringBSTR($bstr)
 
         $tokenBody = @{
             grant_type    = "client_credentials"
             client_id     = $ClientId
-            client_secret = $clientSecret
+            client_secret = $plainSecret
         }
 
         $tokenResponse = Invoke-RestMethod `
@@ -49,23 +52,22 @@ try {
             -ContentType "application/x-www-form-urlencoded" `
             -Body $tokenBody
 
+        $accessToken = $tokenResponse.access_token
+
     }
     finally {
+
         [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($bstr)
-        $clientSecret = $null
+
+        $plainSecret = $null
         $secureSecret = $null
         $tokenBody = $null
-    }
 
-    $accessToken = $tokenResponse.access_token
+    }
 
     if (-not $accessToken) {
         throw "Access token alinamadi."
     }
-
-    $tokenResponse = $null
-
-    Write-Host "Token basariyla alindi." -ForegroundColor Green
 
     $headers = @{
         Authorization = "Bearer $accessToken"
@@ -73,39 +75,29 @@ try {
     }
 
     $accessToken = $null
+    $tokenResponse = $null
+
+    Write-Host "Token basariyla alindi." -ForegroundColor Green
 
     # ======================================
-    # 3. PROCESS INSTANCE KONTROLU
+    # 3. PROCESS KONTROL
     # ======================================
 
     Write-Host ""
     Write-Host "=== PROCESS KONTROL ===" -ForegroundColor Cyan
 
-    $process = $null
+    $process = Invoke-RestMethod `
+        -Uri "$ApiBase/v2/process-instances/$ProcessKey" `
+        -Method GET `
+        -Headers $headers
 
-    try {
-
-        $process = Invoke-RestMethod `
-            -Uri "$ApiBase/v2/process-instances/$ProcessKey" `
-            -Method GET `
-            -Headers $headers
-
-        Write-Host "Process bulundu!" -ForegroundColor Green
-
-        Write-Host "Key: $($process.processInstanceKey)"
-        Write-Host "Durum: $($process.state)"
-        Write-Host "Baslangic: $($process.startDate)"
-        Write-Host "Bitis: $($process.endDate)"
-
-    }
-    catch {
-
-        Write-Warning "Process sorgusu basarisiz: $($_.Exception.Message)"
-
-    }
+    Write-Host "Process bulundu."
+    Write-Host "Durum: $($process.state)"
+    Write-Host "Baslangic: $($process.startDate)"
 
     # ======================================
-    # 4. ELEMENT KAYITLARINI GETIR
+    # 4. ELEMENT KAYITLARI
+    # UTF-8 HAM VERI OKUMA
     # ======================================
 
     Write-Host ""
@@ -115,7 +107,6 @@ try {
 
     $offset = 0
     $limit = 500
-    $totalItems = $null
 
     do {
 
@@ -138,20 +129,47 @@ try {
 
         } | ConvertTo-Json -Depth 10
 
-        $response = Invoke-RestMethod `
+        # JSON istegini UTF-8 byte olarak gonder
+        $bodyBytes = [System.Text.Encoding]::UTF8.GetBytes($body)
+
+        # Ham HTTP yanitini al
+        $webResponse = Invoke-WebRequest `
             -Uri $ApiUrl `
             -Method POST `
             -Headers $headers `
-            -ContentType "application/json" `
-            -Body $body
+            -ContentType "application/json; charset=utf-8" `
+            -Body $bodyBytes `
+            -UseBasicParsing
 
-        if ($null -eq $response -or
-            $null -eq $response.PSObject.Properties["items"]) {
+        # Ham yanit byte'larini oku
+        $memoryStream = New-Object System.IO.MemoryStream
 
-            throw "Beklenmeyen API yaniti. items alani bulunamadi."
+        try {
+
+            $rawStream = $webResponse.RawContentStream
+
+            $rawStream.Position = 0
+
+            $rawStream.CopyTo($memoryStream)
+
+            $rawBytes = $memoryStream.ToArray()
+
+        }
+        finally {
+
+            $memoryStream.Dispose()
+
         }
 
-        $totalItems = $response.page.totalItems
+        # JSON'u acikca UTF-8 olarak decode et
+        $jsonText = [System.Text.Encoding]::UTF8.GetString($rawBytes)
+
+        $response = $jsonText | ConvertFrom-Json
+
+        if ($null -eq $response.items) {
+            Write-Warning "API yanitinda kayit bulunamadi."
+            break
+        }
 
         $items = @(
             $response.items | Where-Object {
@@ -167,79 +185,26 @@ try {
 
     } while ($items.Count -eq $limit)
 
-    Write-Host "API toplam kayit: $totalItems"
-
     # ======================================
-    # 5. SIFIR KAYIT KONTROLU
-    # ======================================
-
-    if ($allElements.Count -eq 0) {
-
-        Write-Host ""
-        Write-Host "=== TANI BILGILERI ===" -ForegroundColor Yellow
-
-        Write-Host "Element kaydi bulunamadi."
-        Write-Host "Process Key: $ProcessKey"
-        Write-Host "API: $ApiUrl"
-
-        Write-Host ""
-        Write-Host "Yanit alanlari:"
-
-        $response.PSObject.Properties.Name
-
-        Write-Host ""
-        Write-Host "Sayfalama:"
-
-        $response.page | ConvertTo-Json -Depth 5
-
-        Write-Host ""
-        Write-Warning "Process key, API erisim yetkisi ve veri gorunurlugu kontrol edilmeli."
-
-        return
-    }
-
-    # ======================================
-    # 6. ELEMENT TURLERINI GOSTER
-    # ======================================
-
-    Write-Host ""
-    Write-Host "=== ELEMENT TURLERI ===" -ForegroundColor Cyan
-
-    $allElements |
-        Group-Object type |
-        Select-Object Name, Count |
-        Format-Table -AutoSize
-
-    # ======================================
-    # 7. ONAY ADIMLARINI SEC
+    # 5. USER TASK FILTRESI
     # ======================================
 
     $tasks = @(
         $allElements | Where-Object {
-            $_.type -in @(
-                "USER_TASK",
-                "MANUAL_TASK",
-                "TASK"
-            )
+            $_.type -eq "USER_TASK"
         }
     )
 
     Write-Host ""
-    Write-Host "Bulunan gorev sayisi: $($tasks.Count)" -ForegroundColor Green
+    Write-Host "Toplam onay kaydi: $($tasks.Count)" -ForegroundColor Green
 
     if ($tasks.Count -eq 0) {
-
-        Write-Warning "Gorev tipi bulunamadi."
-
-        $allElements |
-            Select-Object -First 15 elementName, elementId, type, state |
-            Format-Table -AutoSize
-
+        Write-Warning "Onay kaydi bulunamadi."
         return
     }
 
     # ======================================
-    # 8. SURELERI HESAPLA
+    # 6. SURE HESAPLAMA
     # ======================================
 
     $now = [DateTimeOffset]::UtcNow
@@ -249,27 +214,38 @@ try {
         foreach ($task in $tasks) {
 
             if (-not $task.startDate) {
-                Write-Warning "Baslangic tarihi yok: $($task.elementId)"
                 continue
             }
 
-            $start = [DateTimeOffset]::Parse([string]$task.startDate)
+            $start = [DateTimeOffset]::Parse(
+                [string]$task.startDate
+            )
 
             if ($task.endDate) {
 
-                $end = [DateTimeOffset]::Parse([string]$task.endDate)
+                $end = [DateTimeOffset]::Parse(
+                    [string]$task.endDate
+                )
 
-                $endText = $end.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss")
+                $endText = $end.ToLocalTime().ToString(
+                    "yyyy-MM-dd HH:mm:ss"
+                )
 
-                $sureTipi = "Kesin"
+                $sureTipi = "Tamamlandi"
+
+            }
+            elseif ($task.state -eq "COMPLETED") {
+
+                Write-Warning "Tamamlanan gorevin bitis tarihi eksik: $($task.elementId)"
+                continue
 
             }
             else {
 
                 $end = $now
                 $endText = ""
-
                 $sureTipi = "Devam ediyor"
+
             }
 
             $duration = $end - $start
@@ -284,13 +260,20 @@ try {
 
                 OnayAdi = $taskName
 
-                Baslangic = $start.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss")
+                Baslangic = $start.ToLocalTime().ToString(
+                    "yyyy-MM-dd HH:mm:ss"
+                )
 
                 Bitis = $endText
 
-                SureDakika = [math]::Round($duration.TotalMinutes, 2)
+                # Turkce ondalik ayirici kullan
+                SureDakika = $duration.TotalMinutes.ToString(
+                    "0.00", $tr
+                )
 
-                SureSaat = [math]::Round($duration.TotalHours, 2)
+                SureSaat = $duration.TotalHours.ToString(
+                    "0.00", $tr
+                )
 
                 Durum = $task.state
 
@@ -301,73 +284,54 @@ try {
                 ElementId = $task.elementId
 
                 ElementInstanceKey = $task.elementInstanceKey
+
             }
+
         }
+
     )
 
     # ======================================
-    # 9. RAPORU GOSTER
+    # 7. RAPOR
     # ======================================
 
     $report = @($report | Sort-Object Baslangic)
 
-    if ($report.Count -eq 0) {
-        Write-Warning "Raporlanabilecek kayit bulunamadi."
-        return
-    }
-
     Write-Host ""
     Write-Host "=== DRC ONAY RAPORU ===" -ForegroundColor Cyan
 
-    $report |
-        Format-Table OnayAdi, Baslangic, Bitis, SureDakika, Durum -AutoSize
-
-    # ======================================
-    # 10. TOPLAM DRC SURESI
-    # ======================================
-
-    if ($null -ne $process -and $process.startDate) {
-
-        $processStart = [DateTimeOffset]::Parse([string]$process.startDate)
-
-        if ($process.endDate) {
-            $processEnd = [DateTimeOffset]::Parse([string]$process.endDate)
-        }
-        else {
-            $processEnd = $now
-        }
-
-        $totalDuration = $processEnd - $processStart
-
-        Write-Host ""
-        Write-Host "=== TOPLAM DRC SURESI ===" -ForegroundColor Cyan
-
-        Write-Host "Dakika: $([math]::Round($totalDuration.TotalMinutes,2))"
-
-        Write-Host "Saat: $([math]::Round($totalDuration.TotalHours,2))"
-
-        if (-not $process.endDate) {
-            Write-Host "Process halen devam ediyor." -ForegroundColor Yellow
-        }
-    }
-
-    # ======================================
-    # 11. CSV RAPORU
-    # ======================================
+    Write-Host "Kayit sayisi: $($report.Count)"
 
     $report |
-        Export-Csv `
-            -Path $CsvPath `
-            -NoTypeInformation `
-            -Delimiter ";" `
-            -Encoding UTF8
+        Select-Object OnayAdi, SureDakika, Durum |
+        Format-Table -AutoSize
+
+    # ======================================
+    # 8. CSV UTF-8 BOM
+    # ======================================
+
+    $csvLines = @(
+        $report |
+            ConvertTo-Csv `
+                -NoTypeInformation `
+                -Delimiter ";"
+    )
+
+    # Excel icin UTF-8 BOM ile kaydet
+    $utf8Bom = New-Object System.Text.UTF8Encoding($true)
+
+    [System.IO.File]::WriteAllLines(
+        $CsvPath,
+        [string[]]$csvLines,
+        $utf8Bom
+    )
 
     Write-Host ""
     Write-Host "RAPOR BASARIYLA OLUSTURULDU!" -ForegroundColor Green
 
-    Write-Host "Toplam onay: $($report.Count)"
+    Write-Host "Kayit sayisi: $($report.Count)"
 
-    Write-Host "CSV: $CsvPath" -ForegroundColor Green
+    Write-Host "Dosya: $CsvPath" -ForegroundColor Green
 
 }
 catch {
