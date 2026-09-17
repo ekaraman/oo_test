@@ -1,60 +1,160 @@
 
-=if environment = null or
-    environment = "" or
-    restartType = null or
-    serverName = null
-then []
-else if count(restartType) = 0 or
-        count(serverName) = 0
-then []
-else if serviceName != null and
-        list contains(serviceName, "ALL")
-then [
-  {
-    label: "ALL",
-    value: "ALL"
-  }
-]
-else
-  concatenate(
-    [
-      {
-        label: "ALL",
-        value: "ALL"
-      }
-    ],
-    for row in KOSParameters[
-      item.ortam = environment
+# ==========================================
+# CAMUNDA DRC - ONAY SURELERI RAPORU
+# ==========================================
 
-      and
+# 1. Camunda API adresi
+# Ornek: https://camunda-api.sirket.com
+# Adresin sonuna /v2 EKLEMEYIN.
 
-      (
-        some rt in restartType satisfies
-          split(rt, "[|]")[2] = "ALL"
-          or
-          split(rt, "[|]")[2] = item.RestartType
-      )
+$ApiBase = Read-Host "Camunda API adresi"
 
-      and
+# 2. Process Instance Key
+$ProcessInstanceKey = "2251799817545821"
 
-      (
-        some sn in serverName satisfies
-          split(sn, "[|]")[3] = "ALL"
-          or
-          split(sn, "[|]")[3] = item.Servername
-      )
-    ]
-    return {
-      label:
-        row.ortam + " | " +
-        row.RestartType + " | " +
-        row.Servername + " | " +
-        row.ServiceName,
+# 3. Access token
+$secureToken = Read-Host "Access Token" -AsSecureString
 
-      value:
-        row.ortam + "|" +
-        row.RestartType + "|" +
-        row.Servername + "|" +
-        row.ServiceName
+$bstr = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($secureToken)
+
+try {
+    $token = [Runtime.InteropServices.Marshal]::PtrToStringBSTR($bstr)
+}
+finally {
+    [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($bstr)
+}
+
+# 4. API ayarlari
+$uri = $ApiBase.TrimEnd('/') + "/v2/element-instances/search"
+
+$headers = @{
+    Authorization = "Bearer $token"
+    Accept        = "application/json"
+}
+
+# 5. Butun onay kayitlarini getir
+$allTasks = @()
+$offset = 0
+$limit = 500
+
+try {
+
+    do {
+
+        $body = @{
+            filter = @{
+                processInstanceKey = $ProcessInstanceKey
+                type = "USER_TASK"
+            }
+
+            sort = @(
+                @{
+                    field = "elementInstanceKey"
+                    order = "ASC"
+                }
+            )
+
+            page = @{
+                from  = $offset
+                limit = $limit
+            }
+
+        } | ConvertTo-Json -Depth 10
+
+        $response = Invoke-RestMethod `
+            -Uri $uri `
+            -Method Post `
+            -Headers $headers `
+            -ContentType "application/json" `
+            -Body $body `
+            -ErrorAction Stop
+
+        $tasks = @($response.items | Where-Object { $null -ne $_ })
+
+        $allTasks += $tasks
+
+        $offset += $tasks.Count
+
+    } while ($tasks.Count -eq $limit)
+
+}
+catch {
+    Write-Host "API hatasi: $($_.Exception.Message)" -ForegroundColor Red
+    return
+}
+finally {
+    $token = $null
+    $headers.Authorization = $null
+}
+
+# 6. Sure hesaplama
+$now = [DateTimeOffset]::UtcNow
+
+$report = @(
+    foreach ($task in $allTasks) {
+
+        $start = [DateTimeOffset]::Parse($task.startDate)
+
+        if ($task.endDate) {
+            $end = [DateTimeOffset]::Parse($task.endDate)
+        }
+        else {
+            $end = $now
+        }
+
+        $duration = $end - $start
+
+        $taskName = $task.elementName
+
+        if ([string]::IsNullOrWhiteSpace($taskName)) {
+            $taskName = $task.elementId
+        }
+
+        [PSCustomObject]@{
+
+            OnayAdi = $taskName
+
+            Baslangic = $start.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss")
+
+            Bitis = if ($task.endDate) {
+                $end.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss")
+            }
+            else {
+                ""
+            }
+
+            SureDakika = [math]::Round(
+                $duration.TotalMinutes, 2
+            )
+
+            SureSaat = [math]::Round(
+                $duration.TotalHours, 2
+            )
+
+            Durum = $task.state
+
+            ElementInstanceKey = $task.elementInstanceKey
+        }
     }
-  )
+)
+
+# 7. Baslangic saatine gore sirala
+$report = @($report | Sort-Object Baslangic)
+
+# 8. Ekranda goster
+$report |
+    Format-Table OnayAdi, Baslangic, Bitis, SureDakika, Durum -AutoSize
+
+# 9. CSV raporu olustur
+$csvPath = Join-Path $PWD.Path "DRC_Onay_Sureleri.csv"
+
+$report |
+    Export-Csv `
+        -Path $csvPath `
+        -NoTypeInformation `
+        -Delimiter ";" `
+        -Encoding UTF8
+
+Write-Host ""
+Write-Host "Toplam onay kaydi: $($report.Count)" -ForegroundColor Green
+Write-Host "Rapor: $csvPath" -ForegroundColor Green
