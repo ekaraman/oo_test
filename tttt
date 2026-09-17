@@ -1,1 +1,1 @@
-wget -qO- 'http://camunda-platform-elasticsearch:9200/_cat/indices?h=index' | grep '^zeebe-record_' | sed 's/_[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]$//' | sort -u
+wget -qO- 'http://camunda-platform-elasticsearch:9200/zeebe-record_process-instance_*/_search?size=1&_source_includes=value.processInstanceKey,value.elementId,value.bpmnProcessId,intent'
