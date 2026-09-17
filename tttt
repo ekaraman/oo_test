@@ -1,1 +1,1 @@
-wget --no-check-certificate -S -O /dev/null -T 10 https://camunda-auth.qnb.com.tr/ 2>&1
+wget -S -O /dev/null -T 5 -t 1 http://camunda-platform-keycloak:80/auth/ 2>&1
