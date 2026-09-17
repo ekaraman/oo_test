@@ -1,2 +1,1 @@
-- name: CAMUNDA_OPTIMIZE_IMPORT_SKIP_DATA_AFTER_NESTED_DOC_LIMIT_REACHED
-  value: "true"
+wget -qO- 'http://camunda-platform-elasticsearch:9200/optimize-position-based-import-index_v3/_search?pretty&size=10'
