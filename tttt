@@ -1,1 +1,1 @@
-wget -qO- 'http://camunda-platform-elasticsearch:9200/optimize-process-instance-oo_workflow_process_v8/_settings?flat_settings=true&filter_path=*.settings.index.mapping.nested_objects.limit'
+wget -qO- 'http://camunda-platform-elasticsearch:9200/optimize-process-instance-oo_workflow_process_v8/_settings/index.mapping.nested_objects.limit?flat_settings=true'
