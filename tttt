@@ -1,1 +1,1 @@
-wget -qO- "http://camunda-platform-elasticsearch:9200/optimize-process-instance-oo_workflow_process_v8/_count?pretty"
+wget -qO- "http://camunda-platform-elasticsearch:9200/optimize-position-based-import-index_v3/_search?size=20&pretty"
