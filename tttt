@@ -1,1 +1,1 @@
-wget -qO- 'http://camunda-platform-elasticsearch:9200/optimize-position-based-import-index_v3/_search?pretty&size=10'
+wget -qO- 'http://camunda-platform-elasticsearch:9200/optimize-position-based-import-index_v3/_search?size=10&pretty'
