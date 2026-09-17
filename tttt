@@ -1,1 +1,1 @@
-wget -qO- 'http://camunda-platform-elasticsearch:9200/_cat/indices?h=index' | grep 'zeebe-record' | head -40
+wget -qO- 'http://camunda-platform-elasticsearch:9200/_cat/indices?h=index' | grep '^zeebe-record_' | sed 's/_[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]$//' | sort -u
