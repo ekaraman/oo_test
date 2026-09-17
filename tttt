@@ -1,1 +1,1 @@
-wget -qO- "http://camunda-platform-elasticsearch:9200/optimize-process-instance-oo_workflow_process_v8/_count?pretty"
+wget -qO- "http://camunda-platform-elasticsearch:9200/optimize-process-instance-oo_workflow_process_v8/_search?size=100" > /tmp/oo-backup.json
