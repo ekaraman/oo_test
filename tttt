@@ -1,1 +1,2 @@
-grep -Rin 'skipDataAfterNestedDocLimitReached' /optimize/config /optimize 2>/dev/null | head -20
+- name: CAMUNDA_OPTIMIZE_IMPORT_SKIP_DATA_AFTER_NESTED_DOC_LIMIT_REACHED
+  value: "true"
