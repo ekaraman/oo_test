@@ -1,1 +1,1 @@
-wget -qO- "http://camunda-platform-elasticsearch:9200/_cluster/health?pretty"
+wget -S -O /dev/null -T 5 -t 1 "http://camunda-platform-keycloak/auth/realms/camunda-platform/.well-known/openid-configuration" 2>&1
