@@ -1,2 +1,1 @@
-wget -S -O /dev/null -T 10 -t 1 \
-"http://camunda-platform-optimize:80/actuator/health" 2>&1
+wget -qO- http://localhost:8092/actuator/health
