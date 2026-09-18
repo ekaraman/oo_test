@@ -1,2 +1,27 @@
-wget -S -O - -T 10 \
-"http://camunda-platform-keycloak/auth/realms/camunda-platform/.well-known/openid-configuration" 2>&1
+ServerParameters: to json({
+  ServerName: string join(
+    sort(
+      distinct values(selectedKOSRows.Servername),
+      function(x, y) x < y
+    ),
+    ";"
+  ),
+  ServiceNames: string join(
+    for s in sort(
+      distinct values(selectedKOSRows.Servername),
+      function(x, y) x < y
+    )
+    return string join(
+      sort(
+        distinct values(
+          selectedKOSRows[
+            item.Servername = s
+          ].ServiceName
+        ),
+        function(x, y) x < y
+      ),
+      ","
+    ),
+    ";"
+  )
+}),
