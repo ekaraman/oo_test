@@ -1,1 +1,2 @@
-wget -S -O /dev/null -T 5 -t 1 "http://camunda-platform-keycloak/auth/realms/camunda-platform/.well-known/openid-configuration" 2>&1
+wget -S -O /dev/null -T 10 -t 1 \
+"http://camunda-platform-optimize:80/actuator/health" 2>&1
