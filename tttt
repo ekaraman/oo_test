@@ -1,1 +1,2 @@
-wget -qO- http://localhost:8092/actuator/health
+wget -S -O - -T 10 \
+"http://camunda-platform-keycloak/auth/realms/camunda-platform/.well-known/openid-configuration" 2>&1
