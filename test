@@ -1,1 +1,24 @@
 
+if error = null
+then null
+
+else if error.code = "404"
+then bpmnError(
+  "OO_UID_NOT_FOUND",
+  "OO workflow bulunamadi",
+  {
+    errorCode: error.code,
+    errorMessage: error.message,
+    errorStatus: error.code
+  }
+)
+
+else bpmnError(
+  "REST_GENERAL_ERROR",
+  "REST Connector Error",
+  {
+    errorCode: error.code,
+    errorMessage: error.message,
+    errorStatus: error.code
+  }
+)
