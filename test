@@ -1,18 +1,5 @@
-if error = null
-then null
-
-else if error.code = "404"
+if error != null
 then bpmnError(
-  "OO_UID_NOT_FOUND",
-  "OO workflow bulunamadi.",
-  {
-    errorCode: error.code,
-    errorMessage: "OO workflow bulunamadi.",
-    errorOutput: error
-  }
-)
-
-else bpmnError(
   "REST_GENERAL_ERROR",
   "REST Connector Error",
   {
@@ -24,3 +11,18 @@ else bpmnError(
     errorOutput: error
   }
 )
+
+else if ooExecutionStatus != "COMPLETED" and ooExecutionStatus != "RESOLVED"
+then bpmnError(
+  "REST_GENERAL_ERROR",
+  "OO workflow execution failed",
+  {
+    errorCode: "OO_EXECUTION_ERROR",
+    errorMessage: "OO akışı başarısız tamamlandı. Akış detaylarını OO üzerinden kontrol ediniz.",
+    errorOutput: {
+      executionStatus: ooExecutionStatus
+    }
+  }
+)
+
+else null
