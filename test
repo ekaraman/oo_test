@@ -1,17 +1,3 @@
-if error != null
-then bpmnError(
-  "REST_GENERAL_ERROR",
-  "REST Connector Error",
-  {
-    errorCode: error.code,
-    errorMessage:
-      if error.message != null and error.message != ""
-      then error.message
-      else "REST Connector Error. Please, check errorOutput variable for details.",
-    errorOutput: error
-  }
-)
-
 else if ooExecutionStatus != "COMPLETED"
      or ooResultStatusType != "RESOLVED"
 then bpmnError(
@@ -19,12 +5,8 @@ then bpmnError(
   "OO workflow execution failed",
   {
     errorCode: "OO_EXECUTION_ERROR",
-    errorMessage: "OO akışı başarısız tamamlandı. Akış detaylarını OO üzerinden kontrol ediniz.",
-    errorOutput: {
-      ooExecutionStatus: ooExecutionStatus,
-      ooResultStatusType: ooResultStatusType
-    }
+    errorMessage: "OO status kontrolü başarısız.",
+    debugExecutionStatus: ooExecutionStatus,
+    debugResultStatusType: ooResultStatusType
   }
 )
-
-else null
