@@ -1,15 +1,14 @@
-
 if error = null
 then null
 
 else if error.code = "404"
 then bpmnError(
   "OO_UID_NOT_FOUND",
-  "OO workflow bulunamadi",
+  "OO workflow bulunamadi.",
   {
     errorCode: error.code,
-    errorMessage: error.message,
-    errorStatus: error.code
+    errorMessage: "OO workflow bulunamadi.",
+    errorOutput: error
   }
 )
 
@@ -18,7 +17,10 @@ else bpmnError(
   "REST Connector Error",
   {
     errorCode: error.code,
-    errorMessage: error.message,
-    errorStatus: error.code
+    errorMessage:
+      if error.message != null and error.message != ""
+      then error.message
+      else "REST Connector Error. Please, check errorOutput variable for details.",
+    errorOutput: error
   }
 )
