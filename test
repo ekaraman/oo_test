@@ -12,7 +12,8 @@ then bpmnError(
   }
 )
 
-else if ooExecutionStatus != "COMPLETED" and ooExecutionStatus != "RESOLVED"
+else if ooExecutionStatus != "COMPLETED"
+     or ooResultStatusType != "RESOLVED"
 then bpmnError(
   "REST_GENERAL_ERROR",
   "OO workflow execution failed",
@@ -20,7 +21,8 @@ then bpmnError(
     errorCode: "OO_EXECUTION_ERROR",
     errorMessage: "OO akışı başarısız tamamlandı. Akış detaylarını OO üzerinden kontrol ediniz.",
     errorOutput: {
-      executionStatus: ooExecutionStatus
+      ooExecutionStatus: ooExecutionStatus,
+      ooResultStatusType: ooResultStatusType
     }
   }
 )
