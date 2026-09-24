@@ -12,20 +12,15 @@ then bpmnError(
   }
 )
 
-else if ooExecutionStatus != "COMPLETED"
-     or ooResultStatusType != "RESOLVED"
+else if response.body.executionStatus != "COMPLETED"
+     or response.body.resultStatusType != "RESOLVED"
 then bpmnError(
   "REST_GENERAL_ERROR",
   "OO workflow execution failed",
   {
     errorCode: "OO_EXECUTION_ERROR",
-    errorMessage: "OO status kontrolü başarısız. Debug değişkenlerini kontrol ediniz.",
-    debugExecutionStatus: ooExecutionStatus,
-    debugResultStatusType: ooResultStatusType,
-    errorOutput: {
-      ooExecutionStatus: ooExecutionStatus,
-      ooResultStatusType: ooResultStatusType
-    }
+    errorMessage: "OO akışı başarısız tamamlandı. Akış detaylarını OO üzerinden kontrol ediniz.",
+    errorOutput: response.body
   }
 )
 
