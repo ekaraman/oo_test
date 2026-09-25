@@ -1,18 +1,1 @@
-= body[1].status != "RUNNING"
-  and body[1].status != "PAUSED"
-  and body[1].status != "PENDING_PAUSE"
-  and body[1].status != "PENDING_CANCEL"
-
-
-= string(ooExecutionId)
-
-
-= body[1].executionId
-
-= {
-  ooExecutionStatus: response.body[1].status
-}
-
-= {
-  ooExecutionStatus: body[1].status
-}
+timeout 5 bash -c 'echo > /dev/tcp/SMTP_HOST/25' && echo "25 PORT OPEN" || echo "25 PORT FAILED"
