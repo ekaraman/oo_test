@@ -1,27 +1,18 @@
-if error != null
-then bpmnError(
-  "REST_GENERAL_ERROR",
-  "REST Connector Error",
-  {
-    errorCode: error.code,
-    errorMessage:
-      if error.message != null and error.message != ""
-      then error.message
-      else "REST Connector Error. Please, check errorOutput variable for details.",
-    errorOutput: error
-  }
-)
+= body[1].status != "RUNNING"
+  and body[1].status != "PAUSED"
+  and body[1].status != "PENDING_PAUSE"
+  and body[1].status != "PENDING_CANCEL"
 
-else if response.body.executionStatus != "COMPLETED"
-     or response.body.resultStatusType != "RESOLVED"
-then bpmnError(
-  "REST_GENERAL_ERROR",
-  "OO workflow execution failed",
-  {
-    errorCode: "OO_EXECUTION_ERROR",
-    errorMessage: "OO akışı başarısız tamamlandı. Akış detaylarını OO üzerinden kontrol ediniz.",
-    errorOutput: response.body
-  }
-)
 
-else null
+= string(ooExecutionId)
+
+
+= body[1].executionId
+
+= {
+  ooExecutionStatus: response.body[1].status
+}
+
+= {
+  ooExecutionStatus: body[1].status
+}
