@@ -15,52 +15,13 @@
 string join(
   for r in serviceRows[item != null]
   return
-    (
-      if lower case(r.status) = "service is running"
-      then "<tr style=""background-color:#d4edda;"">"
-      else if lower case(r.status) = "service is stopped"
-      then "<tr style=""background-color:#f8d7da;"">"
-      else "<tr style=""background-color:#fff3cd;"">"
-    )
-    +
-    "<td>"
-    +
-    replace(
-      replace(
-        replace(r.server, "&", "&amp;"),
-        "<", "&lt;"
-      ),
-      ">", "&gt;"
-    )
-    +
-    "</td>"
-    +
-    "<td>"
-    +
-    replace(
-      replace(
-        replace(r.service, "&", "&amp;"),
-        "<", "&lt;"
-      ),
-      ">", "&gt;"
-    )
-    +
-    "</td>"
-    +
-    "<td>"
-    +
-    replace(
-      replace(
-        replace(r.status, "&", "&amp;"),
-        "<", "&lt;"
-      ),
-      ">", "&gt;"
-    )
-    +
-    "</td>"
-    +
-    "</tr>",
-  ""
-)
-+
-"</tbody></table>"
+  (
+    if lower case(r.status) = "service is running"
+    then "<tr style='background-color:#d4edda;'>"
+    else if lower case(r.status) = "service is stopped"
+    then "<tr style='background-color:#f8d7da;'>"
+    else "<tr style='background-color:#fff3cd;'>"
+  )
+  +
+  "<td>"
+  +
