@@ -1,1 +1,66 @@
-timeout 5 bash -c 'echo > /dev/tcp/SMTP_HOST/25' && echo "25 PORT OPEN" || echo "25 PORT FAILED"
+"<h2>Servis Durumları</h2>"
++
+"<table><tbody>"
++
+"<tr>"
++
+"<th>Sunucu Adı</th>"
++
+"<th>Servis Adı</th>"
++
+"<th>Servis Durumu</th>"
++
+"</tr>"
++
+string join(
+  for r in serviceRows[item != null]
+  return
+    (
+      if lower case(r.status) = "service is running"
+      then "<tr style=""background-color:#d4edda;"">"
+      else if lower case(r.status) = "service is stopped"
+      then "<tr style=""background-color:#f8d7da;"">"
+      else "<tr style=""background-color:#fff3cd;"">"
+    )
+    +
+    "<td>"
+    +
+    replace(
+      replace(
+        replace(r.server, "&", "&amp;"),
+        "<", "&lt;"
+      ),
+      ">", "&gt;"
+    )
+    +
+    "</td>"
+    +
+    "<td>"
+    +
+    replace(
+      replace(
+        replace(r.service, "&", "&amp;"),
+        "<", "&lt;"
+      ),
+      ">", "&gt;"
+    )
+    +
+    "</td>"
+    +
+    "<td>"
+    +
+    replace(
+      replace(
+        replace(r.status, "&", "&amp;"),
+        "<", "&lt;"
+      ),
+      ">", "&gt;"
+    )
+    +
+    "</td>"
+    +
+    "</tr>",
+  ""
+)
++
+"</tbody></table>"
