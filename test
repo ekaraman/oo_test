@@ -1,14 +1,1 @@
-wget -S -O- \
-  --user='KULLANICI_ADI' \
-  --password='SIFRE' \
-  'https://AAP_URL/api/controller/v2/workflow_job_templates/?name=TEMPLATE_ADI'
-
-
-AUTH=$(printf '%s' 'KULLANICI_ADI:SIFRE' | base64 | tr -d '\n')
-
-wget -S -O- \
-  --header="Authorization: Basic $AUTH" \
-  --header="Content-Type: application/json" \
-  'https://AAP_URL/api/controller/v2/workflow_job_templates/?name=TEMPLATE_ADI'
-
-
+timeout 5 bash -c '</dev/tcp/AAP_HOSTNAME/443' && echo "443 OPEN" || echo "443 CLOSED"
