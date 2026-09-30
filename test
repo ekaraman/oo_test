@@ -1,27 +1,14 @@
-"<h2>Servis Durumları</h2>"
-+
-"<table><tbody>"
-+
-"<tr>"
-+
-"<th>Sunucu Adı</th>"
-+
-"<th>Servis Adı</th>"
-+
-"<th>Servis Durumu</th>"
-+
-"</tr>"
-+
-string join(
-  for r in serviceRows[item != null]
-  return
-  (
-    if lower case(r.status) = "service is running"
-    then "<tr style='background-color:#d4edda;'>"
-    else if lower case(r.status) = "service is stopped"
-    then "<tr style='background-color:#f8d7da;'>"
-    else "<tr style='background-color:#fff3cd;'>"
-  )
-  +
-  "<td>"
-  +
+wget -S -O- \
+  --user='KULLANICI_ADI' \
+  --password='SIFRE' \
+  'https://AAP_URL/api/controller/v2/workflow_job_templates/?name=TEMPLATE_ADI'
+
+
+AUTH=$(printf '%s' 'KULLANICI_ADI:SIFRE' | base64 | tr -d '\n')
+
+wget -S -O- \
+  --header="Authorization: Basic $AUTH" \
+  --header="Content-Type: application/json" \
+  'https://AAP_URL/api/controller/v2/workflow_job_templates/?name=TEMPLATE_ADI'
+
+
