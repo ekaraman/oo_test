@@ -1,12 +1,35 @@
-=body.status = "successful"
-or body.status = "failed"
-or body.status = "error"
-or body.status = "canceled"
+={
+  aapWorkflowJobStatus: response.body.status,
+  aapWorkflowJobFinished: response.body.finished,
+  aapWorkflowJobElapsed: response.body.elapsed,
+  aapWorkflowResult: response.body
+}
 
 
 
-Correlation key (process)
-=string(aapWorkflowJobId)
+if error != null
+then bpmnError(
+  "REST_GENERAL_ERROR",
+  "REST Connector Error",
+  {
+    errorCode: error.code,
+    errorMessage:
+      if error.message != null and error.message != ""
+      then error.message
+      else "REST Connector Error. Please check errorOutput variable for details.",
+    errorOutput: error
+  }
+)
 
-Correlation key (payload)
-=string(body.id)
+else if getAAPWorkflowResultResponse.body.status != "successful"
+then bpmnError(
+  "AAP_WORKFLOW_EXECUTION_ERROR",
+  "AAP workflow execution failed",
+  {
+    errorCode: "AAP_WORKFLOW_EXECUTION_ERROR",
+    errorMessage: "AAP workflow başarıyla tamamlanmadı. AAP job detaylarını kontrol ediniz.",
+    errorOutput: getAAPWorkflowResultResponse
+  }
+)
+
+else null
