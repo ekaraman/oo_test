@@ -1,1 +1,52 @@
-timeout 5 bash -c '</dev/tcp/AAP_HOSTNAME/443' && echo "443 OPEN" || echo "443 CLOSED"
+={
+  aapTemplateId:
+    if response.status = 200 and response.body.count > 0
+    then response.body.results[1].id
+    else null,
+
+  aapTemplateFound:
+    response.status = 200 and response.body.count > 0
+}
+
+
+if error = null
+then null
+else
+bpmnError(
+  "AAP_REST_ERROR",
+  "AAP REST Connector Error",
+  {
+    errorCode: error.code,
+    errorMessage: "AAP REST Connector Error. Please check errorOutput variable for details.",
+    errorOutput: error
+  }
+)
+
+
+
+
+if error != null
+then
+  bpmnError(
+    "AAP_REST_ERROR",
+    "AAP REST Connector Error",
+    {
+      errorCode: error.code,
+      errorMessage: "AAP REST Connector Error. Please check errorOutput variable for details.",
+      errorOutput: error
+    }
+  )
+
+else if response.status = 200 and response.body.count = 0
+then
+  bpmnError(
+    "AAP_TEMPLATE_NOT_FOUND",
+    "AAP workflow template bulunamadı",
+    {
+      errorCode: "AAP_TEMPLATE_NOT_FOUND",
+      errorMessage: "AAP workflow template bulunamadı",
+      errorOutput: response.body
+    }
+  )
+
+else null
