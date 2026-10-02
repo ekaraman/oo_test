@@ -1,52 +1,12 @@
-={
-  aapTemplateId:
-    if response.status = 200 and response.body.count > 0
-    then response.body.results[1].id
-    else null,
-
-  aapTemplateFound:
-    response.status = 200 and response.body.count > 0
-}
-
-
-if error = null
-then null
-else
-bpmnError(
-  "AAP_REST_ERROR",
-  "AAP REST Connector Error",
-  {
-    errorCode: error.code,
-    errorMessage: "AAP REST Connector Error. Please check errorOutput variable for details.",
-    errorOutput: error
-  }
-)
+=body.status = "successful"
+or body.status = "failed"
+or body.status = "error"
+or body.status = "canceled"
 
 
 
+Correlation key (process)
+=string(aapWorkflowJobId)
 
-if error != null
-then
-  bpmnError(
-    "AAP_REST_ERROR",
-    "AAP REST Connector Error",
-    {
-      errorCode: error.code,
-      errorMessage: "AAP REST Connector Error. Please check errorOutput variable for details.",
-      errorOutput: error
-    }
-  )
-
-else if response.status = 200 and response.body.count = 0
-then
-  bpmnError(
-    "AAP_TEMPLATE_NOT_FOUND",
-    "AAP workflow template bulunamadı",
-    {
-      errorCode: "AAP_TEMPLATE_NOT_FOUND",
-      errorMessage: "AAP workflow template bulunamadı",
-      errorOutput: response.body
-    }
-  )
-
-else null
+Correlation key (payload)
+=string(body.id)
