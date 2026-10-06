@@ -1,11 +1,8 @@
-$allProcesses |
-    Group-Object processDefinitionId |
-    ForEach-Object {
-        [PSCustomObject]@{
-            ProcessId    = $_.Name
-            VersionCount = $_.Count
-            MaxVersion   = ($_.Group.version | Measure-Object -Maximum).Maximum
-        }
-    } |
-    Sort-Object VersionCount -Descending |
-    Format-Table -AutoSize
+# UTF-8 console ayarlari
+[Console]::InputEncoding  = [System.Text.Encoding]::UTF8
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+$OutputEncoding = [System.Text.Encoding]::UTF8
+
+chcp 65001 > $null
+
+$ErrorActionPreference = "Stop"
