@@ -1,38 +1,41 @@
-Write-Host "KEYCLOAK TOKEN" -ForegroundColor Cyan
+$allProcesses = @()
+$after = $null
 
-$secureSecret = Read-Host "Client Secret" -AsSecureString
-
-$BSTR = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($secureSecret)
-
-try {
-    $plainSecret = [Runtime.InteropServices.Marshal]::PtrToStringBSTR($BSTR)
-
-    $tokenBody = @{
-        grant_type    = "client_credentials"
-        client_id     = $ClientId
-        client_secret = $plainSecret
+do {
+    $page = @{
+        limit = 100
     }
 
-    $tokenResponse = Invoke-RestMethod `
+    if ($after) {
+        $page.after = $after
+    }
+
+    $body = @{
+        page = $page
+    } | ConvertTo-Json -Depth 5
+
+    $result = Invoke-RestMethod `
         -Method Post `
-        -Uri $TokenUrl `
-        -ContentType "application/x-www-form-urlencoded" `
-        -Body $tokenBody
+        -Uri "$ApiBase/v2/process-definitions/search" `
+        -Headers $headers `
+        -ContentType "application/json" `
+        -Body $body
 
-    $accessToken = $tokenResponse.access_token
-}
-finally {
-    if ($BSTR -ne [IntPtr]::Zero) {
-        [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($BSTR)
-    }
+    $allProcesses += $result.items
 
-    $plainSecret = $null
-    $secureSecret = $null
-}
+    Write-Host "Alinan kayit: $($allProcesses.Count) / $($result.page.totalItems)"
 
-$headers = @{
-    Authorization  = "Bearer $accessToken"
-    "Content-Type" = "application/json"
-}
+    $after = $result.page.endCursor
 
-Write-Host "Token alindi." -ForegroundColor Green
+} while ($allProcesses.Count -lt $result.page.totalItems)
+
+Write-Host ""
+Write-Host "Toplam $($allProcesses.Count) process definition/version bulundu." -ForegroundColor Green
+
+$allProcesses |
+    Select-Object processDefinitionKey,
+                  processDefinitionId,
+                  name,
+                  version |
+    Sort-Object processDefinitionId, version |
+    Format-Table -AutoSize
