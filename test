@@ -1,41 +1,11 @@
-$allProcesses = @()
-$after = $null
-
-do {
-    $page = @{
-        limit = 100
-    }
-
-    if ($after) {
-        $page.after = $after
-    }
-
-    $body = @{
-        page = $page
-    } | ConvertTo-Json -Depth 5
-
-    $result = Invoke-RestMethod `
-        -Method Post `
-        -Uri "$ApiBase/v2/process-definitions/search" `
-        -Headers $headers `
-        -ContentType "application/json" `
-        -Body $body
-
-    $allProcesses += $result.items
-
-    Write-Host "Alinan kayit: $($allProcesses.Count) / $($result.page.totalItems)"
-
-    $after = $result.page.endCursor
-
-} while ($allProcesses.Count -lt $result.page.totalItems)
-
-Write-Host ""
-Write-Host "Toplam $($allProcesses.Count) process definition/version bulundu." -ForegroundColor Green
-
 $allProcesses |
-    Select-Object processDefinitionKey,
-                  processDefinitionId,
-                  name,
-                  version |
-    Sort-Object processDefinitionId, version |
+    Group-Object processDefinitionId |
+    ForEach-Object {
+        [PSCustomObject]@{
+            ProcessId    = $_.Name
+            VersionCount = $_.Count
+            MaxVersion   = ($_.Group.version | Measure-Object -Maximum).Maximum
+        }
+    } |
+    Sort-Object VersionCount -Descending |
     Format-Table -AutoSize
