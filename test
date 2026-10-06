@@ -1,8 +1,11 @@
-# UTF-8 console ayarlari
-[Console]::InputEncoding  = [System.Text.Encoding]::UTF8
-[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
-$OutputEncoding = [System.Text.Encoding]::UTF8
+$response = Invoke-WebRequest `
+    -Method Post `
+    -Uri "$ApiBase/v2/process-definitions/search" `
+    -Headers $headers `
+    -ContentType "application/json; charset=utf-8" `
+    -Body $body `
+    -UseBasicParsing
 
-chcp 65001 > $null
-
-$ErrorActionPreference = "Stop"
+$bytes = $response.RawContentStream.ToArray()
+$json  = [System.Text.Encoding]::UTF8.GetString($bytes)
+$result = $json | ConvertFrom-Json
