@@ -1,21 +1,38 @@
-$camundaUrl = "https://CAMUNDA-API"
+Write-Host "KEYCLOAK TOKEN" -ForegroundColor Cyan
 
-# Process definition'ları getir
-$body = @{
-    page = @{
-        limit = 100
+$secureSecret = Read-Host "Client Secret" -AsSecureString
+
+$BSTR = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($secureSecret)
+
+try {
+    $plainSecret = [Runtime.InteropServices.Marshal]::PtrToStringBSTR($BSTR)
+
+    $tokenBody = @{
+        grant_type    = "client_credentials"
+        client_id     = $ClientId
+        client_secret = $plainSecret
     }
-} | ConvertTo-Json -Depth 5
 
-$result = Invoke-RestMethod `
-    -Method Post `
-    -Uri "$camundaUrl/v2/process-definitions/search" `
-    -Headers $headers `
-    -ContentType "application/json" `
-    -Body $body
+    $tokenResponse = Invoke-RestMethod `
+        -Method Post `
+        -Uri $TokenUrl `
+        -ContentType "application/x-www-form-urlencoded" `
+        -Body $tokenBody
 
-$result.items | Select-Object `
-    processDefinitionKey,
-    processDefinitionId,
-    name,
-    version
+    $accessToken = $tokenResponse.access_token
+}
+finally {
+    if ($BSTR -ne [IntPtr]::Zero) {
+        [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($BSTR)
+    }
+
+    $plainSecret = $null
+    $secureSecret = $null
+}
+
+$headers = @{
+    Authorization  = "Bearer $accessToken"
+    "Content-Type" = "application/json"
+}
+
+Write-Host "Token alindi." -ForegroundColor Green
