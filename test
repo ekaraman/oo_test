@@ -1,127 +1,15 @@
-# ============================================================
-# PROCESS DEFINITION - TUM VERSIONLARI SIL
-# ============================================================
+$payload = $accessToken.Split('.')[1]
 
-Write-Host ""
-Write-Host "==============================================" -ForegroundColor Cyan
-Write-Host " PROCESS DEFINITION TEMIZLEME" -ForegroundColor Cyan
-Write-Host "==============================================" -ForegroundColor Cyan
-Write-Host ""
+# Base64URL -> Base64
+$payload = $payload.Replace('-', '+').Replace('_', '/')
 
-$processIdToDelete = Read-Host "Tum versiyonlari silinecek Process ID"
+switch ($payload.Length % 4) {
+    2 { $payload += '==' }
+    3 { $payload += '=' }
+}
 
-# Girilen Process ID'ye ait tum versionlari bul
-$toDelete = @(
-    $allProcesses |
-        Where-Object {
-            $_.processDefinitionId -eq $processIdToDelete
-        } |
-        Sort-Object version
+$tokenJson = [System.Text.Encoding]::UTF8.GetString(
+    [Convert]::FromBase64String($payload)
 )
 
-if ($toDelete.Count -eq 0) {
-
-    Write-Host ""
-    Write-Host "Process bulunamadi: $processIdToDelete" `
-        -ForegroundColor Red
-
-    return
-}
-
-# ------------------------------------------------------------
-# SILINECEKLERI GOSTER
-# ------------------------------------------------------------
-
-Write-Host ""
-Write-Host "Silinecek process:" -ForegroundColor Yellow
-Write-Host ""
-
-$toDelete |
-    Select-Object `
-        processDefinitionId,
-        name,
-        version,
-        processDefinitionKey |
-    Format-Table -AutoSize
-
-Write-Host ""
-Write-Host "Toplam $($toDelete.Count) VERSION silinecek." `
-    -ForegroundColor Yellow
-
-Write-Host ""
-Write-Host "UYARI:" -ForegroundColor Red
-Write-Host "Process definition ve history verileri silinecek." `
-    -ForegroundColor Red
-
-Write-Host ""
-
-$confirmation = Read-Host "Devam etmek icin SIL yazin"
-
-if ($confirmation -cne "SIL") {
-
-    Write-Host ""
-    Write-Host "Islem iptal edildi." -ForegroundColor Yellow
-
-    return
-}
-
-# ------------------------------------------------------------
-# DELETE
-# ------------------------------------------------------------
-
-$deleteBody = @{
-    deleteHistory = $true
-} | ConvertTo-Json
-
-$successCount = 0
-$failCount    = 0
-
-foreach ($process in $toDelete) {
-
-    $key = $process.processDefinitionKey
-    $ver = $process.version
-
-    Write-Host ""
-    Write-Host "Version $ver siliniyor..." `
-        -ForegroundColor Cyan
-
-    try {
-
-        Invoke-RestMethod `
-            -Method Post `
-            -Uri "$ApiBase/v2/resources/$key/deletion" `
-            -Headers $headers `
-            -ContentType "application/json" `
-            -Body $deleteBody
-
-        Write-Host "OK - Version $ver" `
-            -ForegroundColor Green
-
-        $successCount++
-
-    }
-    catch {
-
-        Write-Host "HATA - Version $ver" `
-            -ForegroundColor Red
-
-        Write-Host $_.Exception.Message `
-            -ForegroundColor Red
-
-        $failCount++
-    }
-}
-
-# ------------------------------------------------------------
-# SONUC
-# ------------------------------------------------------------
-
-Write-Host ""
-Write-Host "==============================================" -ForegroundColor Cyan
-Write-Host " TEMIZLEME TAMAMLANDI" -ForegroundColor Cyan
-Write-Host "==============================================" -ForegroundColor Cyan
-
-Write-Host "Process ID : $processIdToDelete"
-Write-Host "Basarili   : $successCount" -ForegroundColor Green
-Write-Host "Hatali     : $failCount" -ForegroundColor Red
-Write-Host ""
+$tokenJson | ConvertFrom-Json | Format-List *
