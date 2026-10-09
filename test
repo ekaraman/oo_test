@@ -104,3 +104,89 @@ $result = Invoke-RestMethod `
 
 Write-Host "Process started successfully!"
 Write-Host "Process Instance Key: $($result.processInstanceKey)"
+
+
+
+
+
+### groovy
+
+
+
+
+import groovy.json.JsonOutput
+import groovy.json.JsonSlurper
+import java.net.HttpURLConnection
+
+def baseUrl = "https://camunda-operate.qnb.com.tr"
+def token = "ACCESS_TOKEN_FROM_KEYCLOAK"
+
+def processId = "JiraTaskAutomation"
+def versionTag = "prd"
+
+// HTTP POST helper
+def postJson = { String path, Map payload ->
+    def conn = (HttpURLConnection)
+        new URL(baseUrl + path).openConnection()
+
+    conn.requestMethod = "POST"
+    conn.doOutput = true
+    conn.setRequestProperty(
+        "Authorization", "Bearer ${token}")
+    conn.setRequestProperty(
+        "Content-Type", "application/json")
+
+    conn.outputStream.withWriter("UTF-8") {
+        it.write(JsonOutput.toJson(payload))
+    }
+
+    def status = conn.responseCode
+    def stream = status < 400 ?
+        conn.inputStream : conn.errorStream
+    def response = stream?.getText("UTF-8")
+
+    conn.disconnect()
+
+    if (status >= 400) {
+        throw new RuntimeException(
+            "Camunda HTTP ${status}: ${response}")
+    }
+
+    return new JsonSlurper().parseText(response)
+}
+
+// 1. Find process definition
+def definitions = postJson(
+    "/v2/process-definitions/search",
+    [
+        filter: [
+            processDefinitionId: processId,
+            versionTag: versionTag
+        ],
+        sort: [[field: "version", order: "DESC"]],
+        page: [limit: 100]
+    ]
+)
+
+def selected = definitions.items
+    .max { it.version as Integer }
+
+if (!selected) {
+    throw new RuntimeException(
+        "Process not found: ${processId}/${versionTag}")
+}
+
+// 2. Start process instance
+def result = postJson(
+    "/v2/process-instances",
+    [
+        processDefinitionKey:
+            selected.processDefinitionKey.toString(),
+        variables: [
+            jiraTaskCategoryId: "IJSD-4436100",
+            jiraIssueKey: "CHG-58159"
+        ]
+    ]
+)
+
+log.info("Started: ${result.processInstanceKey}")
