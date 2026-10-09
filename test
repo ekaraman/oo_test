@@ -1,15 +1,106 @@
-$payload = $accessToken.Split('.')[1]
 
-# Base64URL -> Base64
-$payload = $payload.Replace('-', '+').Replace('_', '/')
+# ==========================================
+# 1. CONFIGURATION
+# ==========================================
 
-switch ($payload.Length % 4) {
-    2 { $payload += '==' }
-    3 { $payload += '=' }
+$baseUrl = "https://camunda-operate.qnb.com.tr"
+$tokenUrl = "https://camunda-auth.qnb.com.tr/auth/realms/camunda-platform/protocol/openid-connect/token"
+
+$clientId = "jira-camunda-user"
+$clientSecret = "YOUR_CLIENT_SECRET"
+$username = "YOUR_USERNAME"
+$password = "YOUR_PASSWORD"
+
+$processId = "JiraTaskAutomation"
+$versionTag = "tst"  # tst veya prd
+
+# ==========================================
+# 2. GET ACCESS TOKEN
+# ==========================================
+
+$body = @{
+    grant_type    = "password"
+    client_id     = $clientId
+    client_secret = $clientSecret
+    username      = $username
+    password      = $password
 }
 
-$tokenJson = [System.Text.Encoding]::UTF8.GetString(
-    [Convert]::FromBase64String($payload)
-)
+$response = Invoke-RestMethod `
+    -Method Post `
+    -Uri $tokenUrl `
+    -ContentType "application/x-www-form-urlencoded" `
+    -Body $body
 
-$tokenJson | ConvertFrom-Json | Format-List *
+$token = $response.access_token
+
+$headers = @{
+    Authorization = "Bearer $token"
+}
+
+# ==========================================
+# 3. FIND PROCESS BY VERSION TAG
+# ==========================================
+
+$searchBody = @{
+    filter = @{
+        processDefinitionId = $processId
+        versionTag = $versionTag
+    }
+    sort = @(
+        @{
+            field = "version"
+            order = "DESC"
+        }
+    )
+    page = @{
+        limit = 100
+    }
+} | ConvertTo-Json -Depth 10
+
+$definitions = Invoke-RestMethod `
+    -Method Post `
+    -Uri "$baseUrl/v2/process-definitions/search" `
+    -Headers $headers `
+    -ContentType "application/json" `
+    -Body $searchBody
+
+$selected = $definitions.items |
+    Sort-Object version -Descending |
+    Select-Object -First 1
+
+if (-not $selected) {
+    throw "Process bulunamadi: $processId / $versionTag"
+}
+
+Write-Host "Process ID: $processId"
+Write-Host "Version Tag: $versionTag"
+Write-Host "Zeebe Version: $($selected.version)"
+Write-Host "Definition Key: $($selected.processDefinitionKey)"
+
+# ==========================================
+# 4. START PROCESS INSTANCE
+# ==========================================
+
+$processBody = @{
+    processDefinitionKey = [string]$selected.processDefinitionKey
+
+    variables = @{
+        jiraTaskCategoryId = "IJSD-4436100"
+        jiraIssueKey = "CHG-58159"
+    }
+} | ConvertTo-Json -Depth 10
+
+$result = Invoke-RestMethod `
+    -Method Post `
+    -Uri "$baseUrl/v2/process-instances" `
+    -Headers $headers `
+    -ContentType "application/json" `
+    -Body $processBody
+
+# ==========================================
+# 5. RESULT
+# ==========================================
+
+Write-Host "Process started successfully!"
+Write-Host "Process Instance Key: $($result.processInstanceKey)"
