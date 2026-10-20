@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: elasticsearch-test
+  namespace: autocon-prod-camunda
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: elasticsearch-test
+  template:
+    metadata:
+      labels:
+        app: elasticsearch-test
+    spec:
+      containers:
+        - name: elasticsearch
+          image: JFROG_URL/elasticsearch/elasticsearch:9.5.2
+          ports:
+            - containerPort: 9200
+          env:
+            - name: discovery.type
+              value: single-node
+            - name: xpack.security.enabled
+              value: "false"
+            - name: xpack.security.http.ssl.enabled
+              value: "false"
+            - name: ES_JAVA_OPTS
+              value: "-Xms1g -Xmx1g"
+          resources:
+            requests:
+              memory: 2Gi
+              cpu: 500m
+            limits:
+              memory: 3Gi
+              cpu: "2"
+          volumeMounts:
+            - name: es-data
+              mountPath: /usr/share/elasticsearch/data
+      volumes:
+        - name: es-data
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: elasticsearch-test
+  namespace: autocon-prod-camunda
+spec:
+  selector:
+    app: elasticsearch-test
+  ports:
+    - port: 9200
+      targetPort: 9200
