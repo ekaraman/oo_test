@@ -1,3 +1,4 @@
+
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -15,7 +16,7 @@ spec:
     spec:
       containers:
         - name: elasticsearch
-          image: JFROG_URL/elasticsearch/elasticsearch:9.5.2
+          image: JFROG_URL/elasticsearch/elasticsearch:8.19.0
           ports:
             - containerPort: 9200
           env:
@@ -23,10 +24,10 @@ spec:
               value: single-node
             - name: xpack.security.enabled
               value: "false"
-            - name: xpack.security.http.ssl.enabled
-              value: "false"
             - name: ES_JAVA_OPTS
               value: "-Xms1g -Xmx1g"
+            - name: node.store.allow_mmap
+              value: "false"
           resources:
             requests:
               memory: 2Gi
@@ -35,10 +36,10 @@ spec:
               memory: 3Gi
               cpu: "2"
           volumeMounts:
-            - name: es-data
+            - name: data
               mountPath: /usr/share/elasticsearch/data
       volumes:
-        - name: es-data
+        - name: data
           emptyDir: {}
 ---
 apiVersion: v1
@@ -50,5 +51,6 @@ spec:
   selector:
     app: elasticsearch-test
   ports:
-    - port: 9200
+    - name: http
+      port: 9200
       targetPort: 9200
